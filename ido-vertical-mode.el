@@ -1,4 +1,4 @@
-;;; ido-vertical-mode.el --- Makes ido-mode display vertically
+;;; ido-vertical-mode.el --- Makes ido-mode display vertically.
 
 ;; Author: Steven Degutis
 ;; URL: https://github.com/sdegutis/ido-vertical-mode.el
