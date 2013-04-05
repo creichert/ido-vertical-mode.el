@@ -6,7 +6,7 @@ Makes ido-mode display vertically.
 
 This mode takes care of some caveats that are otherwise ugly to store in your init file.
 
-It's **highly** recommended that you also use [`ido-ubiquitous`](https://github.com/DarwinAwardWinner/ido-ubiquitous) (on [MELPA](http://melpa.milkbox.net/)).
+It's **highly** recommended that you also use [`ido-ubiquitous`](https://github.com/DarwinAwardWinner/ido-ubiquitous) and [`smex`](https://github.com/nonsequitur/smex) (on [MELPA](http://melpa.milkbox.net/)).
 
 ### Install via [MELPA](http://melpa.milkbox.net/)
 
