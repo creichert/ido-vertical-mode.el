@@ -33,11 +33,7 @@
 
 (require 'ido) ;; this is to try to get rid of the warnings, but its not working :(
 
-(defvar sd/old-ido-decorations)
-(defvar sd/old-ido-completions)
 (defvar sd/ido-decorations)
-
-;; meh
 (setq sd/ido-decorations '("\n-> "
                            ""
                            "\n   "
@@ -51,6 +47,12 @@
                            " [Confirm]"
                            "\n-> "
                            ""))
+
+(defvar sd/old-ido-decorations)
+(defvar sd/old-ido-completions)
+(defvar sd/old-ido-enable-flex-matching)
+(defvar sd/old-ido-auto-merge-delay-time)
+(defvar sd/old-ido-ubiquitous-enable-compatibility)
 
 ;; borrowed from ido.el and modified to work better when vertical
 (defun sd/ido-completions (name)
@@ -134,18 +136,33 @@
 	      (nth 1 ido-decorations)))))))
 
 (defun turn-on-ido-vertical ()
-  (add-hook 'ido-minibuffer-setup-hook 'sd/ido-disable-line-truncation)
-  (add-hook 'ido-setup-hook 'sd/ido-define-keys)
+  (setq sd/old-ido-enable-flex-matching ido-enable-flex-matching)
+  (setq ido-enable-flex-matching t)
+
+  (setq sd/old-ido-auto-merge-delay-time ido-auto-merge-delay-time)
+  (setq ido-auto-merge-delay-time 99999)
+
+  (setq sd/old-ido-ubiquitous-enable-compatibility ido-ubiquitous-enable-compatibility)
+  (setq ido-ubiquitous-enable-compatibility nil)
+
   (setq sd/old-ido-decorations ido-decorations)
   (setq sd/old-ido-completions (symbol-function 'ido-completions))
+
   (setq ido-decorations sd/ido-decorations)
-  (fset 'ido-completions 'sd/ido-completions))
+  (fset 'ido-completions 'sd/ido-completions)
+
+  (add-hook 'ido-minibuffer-setup-hook 'sd/ido-disable-line-truncation)
+  (add-hook 'ido-setup-hook 'sd/ido-define-keys))
 
 (defun turn-off-ido-vertical ()
-  (remove-hook 'ido-minibuffer-setup-hook 'sd/ido-disable-line-truncation)
-  (remove-hook 'ido-setup-hook 'sd/ido-define-keys)
+  (setq ido-enable-flex-matching sd/old-ido-enable-flex-matching)
+  (setq ido-auto-merge-delay-time sd/old-ido-auto-merge-delay-time)
+  (setq ido-ubiquitous-enable-compatibility sd/old-ido-ubiquitous-enable-compatibility)
   (setq ido-decorations sd/old-ido-decorations)
-  (fset 'ido-completions sd/old-ido-completions))
+  (fset 'ido-completions sd/old-ido-completions)
+
+  (remove-hook 'ido-minibuffer-setup-hook 'sd/ido-disable-line-truncation)
+  (remove-hook 'ido-setup-hook 'sd/ido-define-keys))
 
 (define-minor-mode ido-vertical-mode
   "Makes ido-mode display vertically."
