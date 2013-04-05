@@ -4,6 +4,12 @@
 ;; URL: https://github.com/sdegutis/ido-vertical-mode.el
 ;; Version: 0.1
 
+
+;; so it doesnt warn when compiling :(
+(setq sd/old-ido-decorations nil)
+(setq sd/old-ido-completions nil)
+
+;; meh
 (setq sd/ido-decorations '("\n-> "
                            ""
                            "\n   "
@@ -18,6 +24,7 @@
                            "\n-> "
                            ""))
 
+;; borrowed from ido.el and modified to work better when vertical
 (defun sd/ido-completions (name)
   ;; Return the string that is displayed after the user's text.
   ;; Modified from `icomplete-completions'.
