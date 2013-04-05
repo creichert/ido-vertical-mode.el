@@ -1,8 +1,34 @@
 ;;; ido-vertical-mode.el --- Makes ido-mode display vertically.
 
+;; Copyright (C) 2013  Steven Degutis
+
 ;; Author: Steven Degutis
 ;; URL: https://github.com/sdegutis/ido-vertical-mode.el
 ;; Version: 0.1
+;; Keywords: convenience
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; This contains some tricks (and one hack) that you'd probably rather
+;; not have sitting in your init file.  I've submitted the hack to
+;; emacs developers in hopes it will become an official configuration
+;; rather than a hack, but who knows how long that'll take, if they
+;; even accept it in the first place.
+
+;;; Code:
 
 
 ;; to get rid of the warnings
@@ -135,6 +161,6 @@
   (define-key ido-completion-map (kbd "C-n") 'ido-next-match)
   (define-key ido-completion-map (kbd "C-p") 'ido-prev-match))
 
-(provide 'ido-vertical-mode)
 
+(provide 'ido-vertical-mode)
 ;;; ido-vertical-mode.el ends here
