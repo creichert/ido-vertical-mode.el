@@ -99,12 +99,16 @@
 	      (nth 1 ido-decorations)))))))
 
 (defun turn-on-ido-vertical ()
+  (add-hook 'ido-minibuffer-setup-hook 'sd/ido-disable-line-truncation)
+  (add-hook 'ido-setup-hook 'sd/ido-define-keys)
   (setq sd/old-ido-decorations ido-decorations)
   (setq sd/old-ido-completions (symbol-function 'ido-completions))
   (setq ido-decorations sd/ido-decorations)
   (fset 'ido-completions 'sd/ido-completions))
 
 (defun turn-off-ido-vertical ()
+  (remove-hook 'ido-minibuffer-setup-hook 'sd/ido-disable-line-truncation)
+  (remove-hook 'ido-setup-hook 'sd/ido-define-keys)
   (setq ido-decorations sd/old-ido-decorations)
   (fset 'ido-completions sd/old-ido-completions))
 
@@ -114,6 +118,12 @@
   (if ido-vertical-mode
       (turn-on-ido-vertical)
     (turn-off-ido-vertical)))
+
+;; remap C-n C-p for vertical ido-mode
+(defun sd/ido-disable-line-truncation () (set (make-local-variable 'truncate-lines) nil))
+(defun sd/ido-define-keys () ;; C-n/p is more intuitive in vertical layout
+  (define-key ido-completion-map (kbd "C-n") 'ido-next-match)
+  (define-key ido-completion-map (kbd "C-p") 'ido-prev-match))
 
 (provide 'ido-vertical-mode)
 
