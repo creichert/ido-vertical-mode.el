@@ -5,6 +5,9 @@
 ;; Version: 0.1
 
 
+;; to get rid of the warnings
+(require 'ido)
+
 ;; so it doesnt warn when compiling :(
 (setq sd/old-ido-decorations nil)
 (setq sd/old-ido-completions nil)
