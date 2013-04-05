@@ -31,12 +31,11 @@
 ;;; Code:
 
 
-;; to get rid of the warnings
-(require 'ido)
+(require 'ido) ;; this is to try to get rid of the warnings, but its not working :(
 
-;; so it doesnt warn when compiling :(
-(setq sd/old-ido-decorations nil)
-(setq sd/old-ido-completions nil)
+(defvar sd/old-ido-decorations)
+(defvar sd/old-ido-completions)
+(defvar sd/ido-decorations)
 
 ;; meh
 (setq sd/ido-decorations '("\n-> "
