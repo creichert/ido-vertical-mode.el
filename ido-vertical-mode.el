@@ -164,6 +164,7 @@
   (remove-hook 'ido-minibuffer-setup-hook 'sd/ido-disable-line-truncation)
   (remove-hook 'ido-setup-hook 'sd/ido-define-keys))
 
+;;;###autoload
 (define-minor-mode ido-vertical-mode
   "Makes ido-mode display vertically."
   :global t
