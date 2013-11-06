@@ -50,9 +50,7 @@
 
 (defvar sd/old-ido-decorations)
 (defvar sd/old-ido-completions)
-(defvar sd/old-ido-enable-flex-matching)
-(defvar sd/old-ido-auto-merge-delay-time)
-(defvar sd/old-ido-ubiquitous-enable-compatibility)
+
 
 ;; borrowed from ido.el and modified to work better when vertical
 (defun sd/ido-completions (name)
@@ -136,16 +134,6 @@
 	      (nth 1 ido-decorations)))))))
 
 (defun turn-on-ido-vertical ()
-  (setq sd/old-ido-enable-flex-matching ido-enable-flex-matching)
-  (setq ido-enable-flex-matching t)
-
-  (setq sd/old-ido-auto-merge-delay-time ido-auto-merge-delay-time)
-  (setq ido-auto-merge-delay-time 99999)
-
-  (when (boundp 'ido-ubiquitous-enable-compatibility)
-    (setq sd/old-ido-ubiquitous-enable-compatibility ido-ubiquitous-enable-compatibility)
-    (setq ido-ubiquitous-enable-compatibility nil))
-
   (setq sd/old-ido-decorations ido-decorations)
   (setq sd/old-ido-completions (symbol-function 'ido-completions))
 
@@ -156,10 +144,6 @@
   (add-hook 'ido-setup-hook 'sd/ido-define-keys))
 
 (defun turn-off-ido-vertical ()
-  (setq ido-enable-flex-matching sd/old-ido-enable-flex-matching)
-  (setq ido-auto-merge-delay-time sd/old-ido-auto-merge-delay-time)
-  (when (boundp 'ido-ubiquitous-enable-compatibility)
-    (setq ido-ubiquitous-enable-compatibility sd/old-ido-ubiquitous-enable-compatibility))
   (setq ido-decorations sd/old-ido-decorations)
   (fset 'ido-completions sd/old-ido-completions)
 
