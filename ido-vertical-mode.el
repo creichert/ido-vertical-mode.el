@@ -190,10 +190,7 @@ This is based on:
   :group 'ido-mode)
 
 (defcustom ido-vertical-define-keys 'C-n-and-C-p-only
-  "Defines which keys that ido-vertical-mode redefines.
-The values can be:
-- C-n-and-C-p-only -- redefines C-n and C-p ONLY
-"
+  "Defines which keys that ido-vertical-mode redefines."
   :type '(choice
           (const :tag "Keep default ido keys." nil)
           (const :tag "C-p and C-n are up & down in match" 'C-n-and-C-p-only)
@@ -206,7 +203,7 @@ The values can be:
     (define-key ido-completion-map (kbd "C-n") 'ido-next-match)
     (define-key ido-completion-map (kbd "C-p") 'ido-prev-match)
     (define-key ido-completion-map (kbd "M-p") 'ido-toggle-prefix))
-  (when (eq ido-vertical-define-keys 'C-n-C-p-up-and-down)
+  (when (memq ido-vertical-define-keys '(C-n-C-p-up-and-down C-n-C-p-up-down-left-right))
     (define-key ido-completion-map (kbd "<up>") 'ido-prev-match)
     (define-key ido-completion-map (kbd "<down>") 'ido-next-match))
   (when (eq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
