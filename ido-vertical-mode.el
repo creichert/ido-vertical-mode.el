@@ -157,12 +157,58 @@
   (if ido-vertical-mode
       (turn-on-ido-vertical)
     (turn-off-ido-vertical)))
+    
+(defun sd/next-match ()
+  "Call the correct function for right key.
+This is based on:
+- Different functions for completing directories and prior history.
+"
+  (interactive)
+  (cond
+   ((and (boundp 'item) item (eq item 'file))
+    (ido-next-match-dir))
+   (t
+    (next-history-element 1))))
+
+(defun sd/prev-match ()
+  "Call the correct function for right key.
+This is based on:
+- Different functions for completing directories and prior history.
+"
+  (interactive)
+  (cond
+   ((and (boundp 'item) item (eq item 'file))
+    (ido-prev-match-dir))
+   (t
+    (previous-history-element 1))))
+
 
 ;; remap C-n C-p for vertical ido-mode
 (defun sd/ido-disable-line-truncation () (set (make-local-variable 'truncate-lines) nil))
+(defgroup ido-vertical-mode nil
+  "Make ido behave vertically."
+  :group 'ido-mode)
+
+(defcustom ido-vertical-define-keys 'C-n-and-C-p-only
+  "Defines which keys that ido-vertical-mode redefines."
+  :type '(choice
+          (const :tag "Keep default ido keys." nil)
+          (const :tag "C-p and C-n are up & down in match" 'C-n-and-C-p-only)
+          (const :tag "C-p/up and C-n/down are up and down in match." 'C-n-C-p-up-and-down)
+          (const :tag "C-p/up, C-n/down are up/down in match. left or right cycle history or directory." 'C-n-C-p-up-down-left-right))
+  :group 'ido-vertical-mode)
+
 (defun sd/ido-define-keys () ;; C-n/p is more intuitive in vertical layout
-  (define-key ido-completion-map (kbd "C-n") 'ido-next-match)
-  (define-key ido-completion-map (kbd "C-p") 'ido-prev-match))
+  (when ido-vertical-define-keys
+    (define-key ido-completion-map (kbd "C-n") 'ido-next-match)
+    (define-key ido-completion-map (kbd "C-p") 'ido-prev-match)
+    (define-key ido-completion-map (kbd "M-p") 'ido-toggle-prefix))
+  (when (memq ido-vertical-define-keys '(C-n-C-p-up-and-down C-n-C-p-up-down-left-right))
+    (define-key ido-completion-map (kbd "<up>") 'ido-prev-match)
+    (define-key ido-completion-map (kbd "<down>") 'ido-next-match))
+  (when (eq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
+    (define-key ido-completion-map (kbd "<left>") 'sd/prev-match)
+    (define-key ido-completion-map (kbd "<right>") 'sd/next-match)))
 
 
 (provide 'ido-vertical-mode)
