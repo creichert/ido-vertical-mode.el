@@ -53,13 +53,13 @@
 This sets up newlines and arrows before, between, and after the
 prospects. For additional information, see `ido-decorations'.")
 
-(defvar ido-vertical-old-decorations ""
+(defvar ido-vertical-old-decorations nil
   "The original `ido-decorations' variable
 
 We need to keep track of the original value so we can restore it
 when turning `ido-vertical-mode' off")
 
-(defvar ido-vertical-old-completions ""
+(defvar ido-vertical-old-completions nil
   "The original `ido-completions' function
 
 We need to keep track of the original value of `ido-completions'
@@ -151,8 +151,11 @@ so we can restore it when turning `ido-vertical-mode' off")
   (set (make-local-variable 'truncate-lines) nil))
 
 (defun turn-on-ido-vertical ()
-  (setq ido-vertical-old-ido-decorations ido-decorations)
-  (setq ido-vertical-old-ido-completions (symbol-function 'ido-completions))
+  (if (and (eq nil ido-vertical-old-decorations)
+         (eq nil ido-vertical-old-completions))
+      (progn
+        (setq ido-vertical-old-decorations ido-decorations)
+        (setq ido-vertical-old-completions (symbol-function 'ido-completions))))
 
   (setq ido-decorations ido-vertical-decorations)
   (fset 'ido-completions 'ido-vertical-completions)
