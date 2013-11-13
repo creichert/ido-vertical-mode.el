@@ -184,7 +184,8 @@ so we can restore it when turning `ido-vertical-mode' off")
   (remove-hook 'ido-setup-hbook 'ido-vertical-define-keys))
 
 (defun ido-vertical-next-match ()
-  "Call the correct function for right key.
+  "Call the correct next-match function for right key.
+
 This is based on:
 - Different functions for completing directories and prior history.
 "
@@ -196,7 +197,8 @@ This is based on:
     (next-history-element 1))))
 
 (defun ido-vertical-prev-match ()
-  "Call the correct function for right key.
+  "Call the correct prev-match function for left key.
+
 This is based on:
 - Different functions for completing directories and prior history.
 "
