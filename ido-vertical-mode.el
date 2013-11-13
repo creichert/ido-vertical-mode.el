@@ -30,27 +30,40 @@
 
 ;;; Code:
 
+(require 'ido)
 
-(require 'ido) ;; this is to try to get rid of the warnings, but its not working :(
+(defvar ido-vertical-decorations
+  '("\n-> "                             ; left bracket around prospect list
+    ""                                  ; right bracket around prospect list
+    "\n   "                             ; separator between prospects, depends on `ido-separator`
+    "\n   ..."                          ; inserted at the end of a truncated list of prospects
+    "["                                 ; left bracket around common match string
+    "]"                                 ; right bracket around common match string
+    " [No match]"
+    " [Matched]"
+    " [Not readable]"
+    " [Too big]"
+    " [Confirm]"
+    "\n-> "                             ; left bracket around the sole remaining completion
+    ""                                  ; right bracket around the sole remaining completion
+    )
 
-(defvar ido-vertical-ido-decorations);
-(setq ido-vertical-ido-decorations '("\n-> "
-                           ""
-                           "\n   "
-                           "\n   ..."
-                           "["
-                           "]"
-                           " [No match]"
-                           " [Matched]"
-                           " [Not readable]"
-                           " [Too big]"
-                           " [Confirm]"
-                           "\n-> "
-                           ""))
+  "Changing the decorations does most of the work for ido-vertical
 
-(defvar ido-vertical-old-ido-decorations)
-(defvar ido-vertical-old-ido-completions)
+This sets up newlines and arrows before, between, and after the
+prospects. For additional information, see `ido-decorations'.")
 
+(defvar ido-vertical-old-decorations ""
+  "The original `ido-decorations' variable
+
+We need to keep track of the original value so we can restore it
+when turning `ido-vertical-mode' off")
+
+(defvar ido-vertical-old-completions ""
+  "The original `ido-completions' function
+
+We need to keep track of the original value of `ido-completions'
+so we can restore it when turning `ido-vertical-mode' off")
 
 ;; borrowed from ido.el and modified to work better when vertical
 (defun ido-vertical-ido-completions (name)
