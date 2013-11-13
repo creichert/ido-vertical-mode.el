@@ -66,7 +66,7 @@ We need to keep track of the original value of `ido-completions'
 so we can restore it when turning `ido-vertical-mode' off")
 
 ;; borrowed from ido.el and modified to work better when vertical
-(defun ido-vertical-ido-completions (name)
+(defun ido-vertical-completions (name)
   ;; Return the string that is displayed after the user's text.
   ;; Modified from `icomplete-completions'.
 
@@ -146,22 +146,26 @@ so we can restore it when turning `ido-vertical-mode' off")
               alternatives
               (nth 1 ido-decorations)))))))
 
+(defun ido-vertical-disable-line-truncation ()
+  "Prevent the newlines in the minibuffer from being truncated"
+  (set (make-local-variable 'truncate-lines) nil))
+
 (defun turn-on-ido-vertical ()
   (setq ido-vertical-old-ido-decorations ido-decorations)
   (setq ido-vertical-old-ido-completions (symbol-function 'ido-completions))
 
-  (setq ido-decorations ido-vertical-ido-decorations)
-  (fset 'ido-completions 'ido-vertical-ido-completions)
+  (setq ido-decorations ido-vertical-decorations)
+  (fset 'ido-completions 'ido-vertical-completions)
 
-  (add-hook 'ido-minibuffer-setup-hook 'ido-vertical-ido-disable-line-truncation)
-  (add-hook 'ido-setup-hook 'ido-vertical-ido-define-keys))
+  (add-hook 'ido-minibuffer-setup-hook 'ido-vertical-disable-line-truncation)
+  (add-hook 'ido-setup-hook 'ido-vertical-define-keys))
 
 (defun turn-off-ido-vertical ()
-  (setq ido-decorations ido-vertical-old-ido-decorations)
-  (fset 'ido-completions ido-vertical-old-ido-completions)
+  (setq ido-decorations ido-vertical-old-decorations)
+  (fset 'ido-completions ido-vertical-old-completions)
 
-  (remove-hook 'ido-minibuffer-setup-hook 'ido-vertical-ido-disable-line-truncation)
-  (remove-hook 'ido-setup-hook 'ido-vertical-ido-define-keys))
+  (remove-hook 'ido-minibuffer-setup-hook 'ido-vertical-disable-line-truncation)
+  (remove-hook 'ido-setup-hbook 'ido-vertical-define-keys))
 
 ;;;###autoload
 (define-minor-mode ido-vertical-mode
@@ -196,8 +200,6 @@ This is based on:
     (previous-history-element 1))))
 
 
-;; remap C-n C-p for vertical ido-mode
-(defun ido-vertical-ido-disable-line-truncation () (set (make-local-variable 'truncate-lines) nil))
 (defgroup ido-vertical-mode nil
   "Make ido behave vertically."
   :group 'ido-mode)
@@ -211,7 +213,7 @@ This is based on:
           (const :tag "C-p/up, C-n/down are up/down in match. left or right cycle history or directory." 'C-n-C-p-up-down-left-right))
   :group 'ido-vertical-mode)
 
-(defun ido-vertical-ido-define-keys () ;; C-n/p is more intuitive in vertical layout
+(defun ido-vertical-define-keys () ;; C-n/p is more intuitive in vertical layout
   (when ido-vertical-define-keys
     (define-key ido-completion-map (kbd "C-n") 'ido-next-match)
     (define-key ido-completion-map (kbd "C-p") 'ido-prev-match)
