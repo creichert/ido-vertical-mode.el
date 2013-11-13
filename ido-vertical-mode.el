@@ -227,7 +227,9 @@ This is based on:
   :global t
   (if ido-vertical-mode
       (turn-on-ido-vertical)
-    (turn-off-ido-vertical)))
+    (turn-off-ido-vertical))
+  (message "ido-vertical-mode has been %s"
+           (if ido-vertical-mode "enabled" "disabled")))
 
 (provide 'ido-vertical-mode)
 ;;; ido-vertical-mode.el ends here
