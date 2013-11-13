@@ -65,6 +65,19 @@ when turning `ido-vertical-mode' off")
 We need to keep track of the original value of `ido-completions'
 so we can restore it when turning `ido-vertical-mode' off")
 
+(defgroup ido-vertical-mode nil
+  "Make ido behave vertically."
+  :group 'ido-mode)
+
+(defcustom ido-vertical-define-keys 'C-n-and-C-p-only
+  "Defines which keys that ido-vertical-mode redefines."
+  :type '(choice
+          (const :tag "Keep default ido keys." nil)
+          (const :tag "C-p and C-n are up & down in match" 'C-n-and-C-p-only)
+          (const :tag "C-p/up and C-n/down are up and down in match." 'C-n-C-p-up-and-down)
+          (const :tag "C-p/up, C-n/down are up/down in match. left or right cycle history or directory." 'C-n-C-p-up-down-left-right))
+  :group 'ido-vertical-mode)
+
 ;; borrowed from ido.el and modified to work better when vertical
 (defun ido-vertical-completions (name)
   ;; Return the string that is displayed after the user's text.
@@ -170,14 +183,6 @@ so we can restore it when turning `ido-vertical-mode' off")
   (remove-hook 'ido-minibuffer-setup-hook 'ido-vertical-disable-line-truncation)
   (remove-hook 'ido-setup-hbook 'ido-vertical-define-keys))
 
-;;;###autoload
-(define-minor-mode ido-vertical-mode
-  "Makes ido-mode display vertically."
-  :global t
-  (if ido-vertical-mode
-      (turn-on-ido-vertical)
-    (turn-off-ido-vertical)))
-
 (defun ido-vertical-next-match ()
   "Call the correct function for right key.
 This is based on:
@@ -202,20 +207,6 @@ This is based on:
    (t
     (previous-history-element 1))))
 
-
-(defgroup ido-vertical-mode nil
-  "Make ido behave vertically."
-  :group 'ido-mode)
-
-(defcustom ido-vertical-define-keys 'C-n-and-C-p-only
-  "Defines which keys that ido-vertical-mode redefines."
-  :type '(choice
-          (const :tag "Keep default ido keys." nil)
-          (const :tag "C-p and C-n are up & down in match" 'C-n-and-C-p-only)
-          (const :tag "C-p/up and C-n/down are up and down in match." 'C-n-C-p-up-and-down)
-          (const :tag "C-p/up, C-n/down are up/down in match. left or right cycle history or directory." 'C-n-C-p-up-down-left-right))
-  :group 'ido-vertical-mode)
-
 (defun ido-vertical-define-keys () ;; C-n/p is more intuitive in vertical layout
   (when ido-vertical-define-keys
     (define-key ido-completion-map (kbd "C-n") 'ido-next-match)
@@ -228,6 +219,13 @@ This is based on:
     (define-key ido-completion-map (kbd "<left>") 'ido-vertical-prev-match)
     (define-key ido-completion-map (kbd "<right>") 'ido-vertical-next-match)))
 
+;;;###autoload
+(define-minor-mode ido-vertical-mode
+  "Makes ido-mode display vertically."
+  :global t
+  (if ido-vertical-mode
+      (turn-on-ido-vertical)
+    (turn-off-ido-vertical)))
 
 (provide 'ido-vertical-mode)
 ;;; ido-vertical-mode.el ends here
