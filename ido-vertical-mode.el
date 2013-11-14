@@ -3,9 +3,10 @@
 ;; Copyright (C) 2013  Steven Degutis
 
 ;; Author: Steven Degutis
-;; URL: https://github.com/sdegutis/ido-vertical-mode.el
-;; Version: 0.1
+;; Maintainer: Daniel Gempesaw <gempesaw@gmail.com>
+;; Version: 0.1.1
 ;; Keywords: convenience
+;; URL: https://github.com/gempesaw/ido-vertical-mode.el
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -22,11 +23,7 @@
 
 ;;; Commentary:
 
-;; This contains some tricks (and one hack) that you'd probably rather
-;; not have sitting in your init file.  I've submitted the hack to
-;; emacs developers in hopes it will become an official configuration
-;; rather than a hack, but who knows how long that'll take, if they
-;; even accept it in the first place.
+;; Makes ido-mode display prospects vertically
 
 ;;; Code:
 

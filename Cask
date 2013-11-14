@@ -1,6 +1,7 @@
 (source melpa)
+(source marmalade)
 
-(package "ido-vertical-mode" "0.1.1" "Makes ido-mode display vertically.")
+(package-file "ido-vertical-mode.el")
 
 (depends-on "ido")
 
