@@ -4,7 +4,10 @@
 
 (ido-mode 1)
 (ido-vertical-mode 1)
-(kmacro-exec-ring-item (quote ([24 98 return] 0 "%d")) 1)
+
+;;; invoke ido-swich-buffer to initialize ido variables that would
+;;; otherwise throw void error
+(execute-kbd-macro [24 98 return] 1)
 
 (ert-deftest ido-vertical-decorations-installed ()
   (ido-vertical-mode 1)
