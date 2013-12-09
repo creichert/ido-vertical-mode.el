@@ -178,7 +178,7 @@ so we can restore it when turning `ido-vertical-mode' off")
   (fset 'ido-completions ido-vertical-old-completions)
 
   (remove-hook 'ido-minibuffer-setup-hook 'ido-vertical-disable-line-truncation)
-  (remove-hook 'ido-setup-hbook 'ido-vertical-define-keys))
+  (remove-hook 'ido-setup-hook 'ido-vertical-define-keys))
 
 (defun ido-vertical-next-match ()
   "Call the correct next-match function for right key.
