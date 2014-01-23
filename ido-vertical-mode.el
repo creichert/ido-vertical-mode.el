@@ -4,7 +4,7 @@
 
 ;; Author: Steven Degutis
 ;; Maintainer: Daniel Gempesaw <gempesaw@gmail.com>
-;; Version: 0.1.1
+;; Version: 0.1.2
 ;; Keywords: convenience
 ;; URL: https://github.com/gempesaw/ido-vertical-mode.el
 
