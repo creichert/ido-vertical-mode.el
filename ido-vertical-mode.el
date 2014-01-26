@@ -28,6 +28,9 @@
 ;;; Code:
 
 (require 'ido)
+(defvar ido-show-confirm-message)
+(defvar ido-directory-nonreadable)
+(defvar ido-directory-too-big)
 
 (defvar ido-vertical-decorations
   '("\n-> "                             ; left bracket around prospect list
