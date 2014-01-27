@@ -4,7 +4,7 @@
 
 ;; Author: Steven Degutis
 ;; Maintainer: Daniel Gempesaw <gempesaw@gmail.com>
-;; Version: 0.1.2
+;; Version: 0.1.3
 ;; Keywords: convenience
 ;; URL: https://github.com/gempesaw/ido-vertical-mode.el
 
@@ -28,8 +28,18 @@
 ;;; Code:
 
 (require 'ido)
+
+;;; The following three variables and their comments are lifted
+;;; directly from `ido.el'; they are defined here to avoid compile-log
+;;; warnings. See `ido.el' for more information.
+
+;; Non-nil if we should add [confirm] to prompt
 (defvar ido-show-confirm-message)
+
+;; Remember if current directory is non-readable (so we cannot do completion).
 (defvar ido-directory-nonreadable)
+
+;; Remember if current directory is 'huge' (so we don't want to do completion).
 (defvar ido-directory-too-big)
 
 (defvar ido-vertical-decorations
