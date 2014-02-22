@@ -4,7 +4,7 @@
 
 ;; Author: Steven Degutis
 ;; Maintainer: Daniel Gempesaw <gempesaw@gmail.com>
-;; Version: 0.1.3
+;; Version: 0.1.4
 ;; Keywords: convenience
 ;; URL: https://github.com/gempesaw/ido-vertical-mode.el
 
@@ -237,9 +237,7 @@ This is based on:
   :global t
   (if ido-vertical-mode
       (turn-on-ido-vertical)
-    (turn-off-ido-vertical))
-  (message "ido-vertical-mode has been %s"
-           (if ido-vertical-mode "enabled" "disabled")))
+    (turn-off-ido-vertical)))
 
 (provide 'ido-vertical-mode)
 ;;; ido-vertical-mode.el ends here
