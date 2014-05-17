@@ -4,7 +4,7 @@
 
 ;; Author: Steven Degutis
 ;; Maintainer: Daniel Gempesaw <gempesaw@gmail.com>
-;; Version: 0.1.4
+;; Version: 0.1.5
 ;; Keywords: convenience
 ;; URL: https://github.com/gempesaw/ido-vertical-mode.el
 
@@ -96,7 +96,17 @@ so we can restore it when turning `ido-vertical-mode' off")
   (let* ((comps ido-matches)
          (ind (and (consp (car comps)) (> (length (cdr (car comps))) 1)
                    ido-merged-indicator))
+         (lencomps (length comps))
+         (additional-items-indicator (nth 3 ido-decorations))
          first)
+
+    ;; Keep the height of the suggestions list constant by padding
+    ;; when lencomps is too small. Also, if lencomps is too short, we
+    ;; should not indicate that there are additional prospects.
+    (if (< lencomps (1+ ido-max-prospects))
+        (progn
+          (setq additional-items-indicator "\n")
+          (setq comps (append comps (make-list (- (1+ ido-max-prospects) lencomps) "")))))
 
     (if (and ind ido-use-faces)
         (put-text-property 0 1 'face 'ido-indicator ind))
@@ -124,15 +134,15 @@ so we can restore it when turning `ido-vertical-mode' off")
             (ido-directory-too-big
              (or (nth 9 ido-decorations) " [Too big]"))
             (ido-report-no-match
-             (nth 6 ido-decorations))  ;; [No match]
+             (nth 6 ido-decorations)) ;; [No match]
             (t "")))
           (ido-incomplete-regexp
            (concat " " (car comps)))
-          ((null (cdr comps))           ;one match
-           (concat (concat (nth 11 ido-decorations)  ;; [ ... ]
+          ((null (cdr comps))                       ;one match
+           (concat (concat (nth 11 ido-decorations) ;; [ ... ]
                            (ido-name (car comps))
                            (nth 12 ido-decorations))
-                   (if (not ido-use-faces) (nth 7 ido-decorations))))  ;; [Matched]
+                   (if (not ido-use-faces) (nth 7 ido-decorations)))) ;; [Matched]
           (t                            ;multiple matches
            (let* ((items (if (> ido-max-prospects 0) (1+ ido-max-prospects) 999))
                   (alternatives
@@ -146,7 +156,7 @@ so we can restore it when turning `ido-vertical-mode' off")
                              (setq items (1- items))
                              (cond
                               ((< items 0) ())
-                              ((= items 0) (list (nth 3 ido-decorations))) ; " | ..."
+                              ((= items 0) (list additional-items-indicator)) ; " | ..."
                               (t
                                (list (or ido-separator (nth 2 ido-decorations)) ; " | "
                                      (let ((str (substring com 0)))
@@ -161,11 +171,11 @@ so we can restore it when turning `ido-vertical-mode' off")
               ;; put in common completion item -- what you get by pressing tab
               (if (and (stringp ido-common-match-string)
                        (> (length ido-common-match-string) (length name)))
-                  (concat (nth 4 ido-decorations)   ;; [ ... ]
+                  (concat (nth 4 ido-decorations) ;; [ ... ]
                           (substring ido-common-match-string (length name))
                           (nth 5 ido-decorations)))
               ;; list all alternatives
-              (nth 0 ido-decorations)  ;; { ... }
+              (nth 0 ido-decorations) ;; { ... }
               alternatives
               (nth 1 ido-decorations)))))))
 
