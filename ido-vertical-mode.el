@@ -158,7 +158,7 @@ so we can restore it when turning `ido-vertical-mode' off")
                               ((< items 0) ())
                               ((= items 0) (list additional-items-indicator)) ; " | ..."
                               (t
-                               (list (or ido-separator (nth 2 ido-decorations)) ; " | "
+                               (list (or (nth 3 ido-decorations) (nth 2 ido-decorations)) ; " | "
                                      (let ((str (substring com 0)))
                                        (if (and ido-use-faces
                                                 (not (string= str first))
