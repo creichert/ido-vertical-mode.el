@@ -185,7 +185,7 @@ so we can restore it when turning `ido-vertical-mode' off")
 
 (defun turn-on-ido-vertical ()
   (if (and (eq nil ido-vertical-old-decorations)
-         (eq nil ido-vertical-old-completions))
+           (eq nil ido-vertical-old-completions))
       (progn
         (setq ido-vertical-old-decorations ido-decorations)
         (setq ido-vertical-old-completions (symbol-function 'ido-completions))))
