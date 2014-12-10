@@ -250,4 +250,7 @@ This is based on:
     (turn-off-ido-vertical)))
 
 (provide 'ido-vertical-mode)
+;; Local Variables:
+;; indent-tabs-mode: nil
+;; End:
 ;;; ido-vertical-mode.el ends here
