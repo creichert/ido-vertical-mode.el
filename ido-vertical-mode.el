@@ -115,13 +115,24 @@ so we can restore it when turning `ido-vertical-mode' off")
         (let* ((fn (ido-name (car comps)))
                (ln (length fn)))
           (setq first (format "%s" fn))
+          (if (fboundp 'add-face-text-property)
+              (add-face-text-property 0 (length first)
+                                      (cond ((> lencomps 1)
+                                             'ido-first-match)
+
+                                            (ido-incomplete-regexp
+                                             'ido-incomplete-regexp)
+
+                                            (t
+                                             'ido-only-match))
+                                      nil first)
           (put-text-property 0 ln 'face
                              (if (= (length comps) 1)
                                  (if ido-incomplete-regexp
                                      'ido-incomplete-regexp
                                    'ido-only-match)
                                'ido-first-match)
-                             first)
+                               first))
           (if ind (setq first (concat first ind)))
           (setq comps (cons first (cdr comps)))))
 
