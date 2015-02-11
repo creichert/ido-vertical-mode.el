@@ -15,6 +15,19 @@
     (should (string-match "->" prospects))
     (should (string-match "\n" prospects))))
 
+(ert-deftest ivm-indicate-more-results ()
+  (ido-vertical-mode 1)
+  (let ((buffers (mapcar (lambda (num)
+                           (get-buffer-create
+                            (format "ivm-test-buffer-%s" num)))
+                       (number-sequence 1 11)))
+      completions)
+  (save-window-excursion
+    (kmacro-exec-ring-item '("bivm-test" 0 "%d") nil)
+    (setq completions (ido-completions "ivm-test"))
+    (should (string-match "\.\.\.$" completions)))
+  (mapc 'kill-buffer buffers)))
+
 (ert-deftest ido-vertical-can-be-turned-off ()
   (ido-vertical-mode 1)
   (ido-vertical-mode -1)
