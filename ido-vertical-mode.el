@@ -88,6 +88,21 @@ so we can restore it when turning `ido-vertical-mode' off")
           (const :tag "C-p/up, C-n/down are up/down in match. left or right cycle history or directory." C-n-C-p-up-down-left-right))
   :group 'ido-vertical-mode)
 
+(defface ido-vertical-first-match-face
+    '((t (:inherit ido-first-match)))
+  "Face used by Ido Vertical for highlighting first match."
+  :group 'ido-vertical-mode)
+
+(defface ido-vertical-only-match-face
+    '((t (:inherit ido-only-match)))
+  "Face used by Ido Vertical for highlighting only match."
+  :group 'ido-vertical-mode)
+
+(defface ido-vertical-match-face
+    '((t (:foreground "#b00000")))
+  "Face used by Ido Vertical the matched part."
+  :group 'ido-vertical-mode)
+
 ;; borrowed from ido.el and modified to work better when vertical
 (defun ido-vertical-completions (name)
   ;; Return the string that is displayed after the user's text.
@@ -107,31 +122,39 @@ so we can restore it when turning `ido-vertical-mode' off")
         (progn
           (setq additional-items-indicator "\n")
           (setq comps (append comps (make-list (- (1+ ido-max-prospects) lencomps) "")))))
-
+    (dotimes (i ido-max-prospects)
+      (setf (nth i comps) (substring (nth i comps) 0))
+      (when (string-match name (nth i comps))
+        (ignore-errors
+          (add-face-text-property (match-beginning 0)
+                                  (match-end 0)
+                                  'ido-vertical-match-face
+                                  nil (nth i comps)))))
     (if (and ind ido-use-faces)
         (put-text-property 0 1 'face 'ido-indicator ind))
 
     (if (and ido-use-faces comps)
         (let* ((fn (ido-name (car comps)))
                (ln (length fn)))
+          (setcar ido-vertical-decorations (format " [%d]\n-> " lencomps))
           (setq first (format "%s" fn))
           (if (fboundp 'add-face-text-property)
               (add-face-text-property 0 (length first)
                                       (cond ((> lencomps 1)
-                                             'ido-first-match)
+                                             'ido-vertical-first-match-face)
 
                                             (ido-incomplete-regexp
                                              'ido-incomplete-regexp)
 
                                             (t
-                                             'ido-only-match))
+                                             'ido-vertical-only-match-face))
                                       nil first)
-          (put-text-property 0 ln 'face
-                             (if (= (length comps) 1)
-                                 (if ido-incomplete-regexp
-                                     'ido-incomplete-regexp
-                                   'ido-only-match)
-                               'ido-first-match)
+            (put-text-property 0 ln 'face
+                               (if (= lencomps 1)
+                                   (if ido-incomplete-regexp
+                                       'ido-incomplete-regexp
+                                     'ido-vertical-only-match-face)
+                                 'ido-vertical-first-match-face)
                                first))
           (if ind (setq first (concat first ind)))
           (setq comps (cons first (cdr comps)))))
