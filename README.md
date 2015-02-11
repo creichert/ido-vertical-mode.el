@@ -33,7 +33,7 @@ on `C-p`, is moved to `M-p`).
 You also have the option to rebind some or all of the arrow keys with
 `ido-vertical-define-keys`:
 
-    (setq ido-vertical-define-keys 'C-n-C-p-up-down)
+    (setq ido-vertical-define-keys 'C-n-C-p-up-and-down)
 
 to use up and down to navigate the options, or
 
