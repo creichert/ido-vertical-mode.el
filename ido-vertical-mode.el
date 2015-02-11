@@ -125,7 +125,11 @@ so we can restore it when turning `ido-vertical-mode' off")
           (if ind (setq first (concat first ind)))
           (setq comps (cons first (cdr comps)))))
 
-    (cond ((null comps)
+    ;; Previously we'd check null comps to see if the list was
+    ;; empty. We pad the list with empty items to keep the list at a
+    ;; constant height, so we have to check if the entire list is
+    ;; empty, instead of (null comps)
+    (cond ((or (eq "" (mapconcat #'append comps "")))
            (cond
             (ido-show-confirm-message
              (or (nth 10 ido-decorations) " [Confirm]"))
