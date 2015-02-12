@@ -11,9 +11,13 @@ You may also be interested in
 [`ido-ubiquitous`](https://github.com/DarwinAwardWinner/ido-ubiquitous)
 and [`smex`](https://github.com/nonsequitur/smex).
 
-## Install via [MELPA](http://melpa.milkbox.net/) or [marmalade](http://marmalade-repo.org)
+## Install via [MELPA Stable](http://stable.melpa.org/#/) or [marmalade](http://marmalade-repo.org)
 
 `M-x` `package-install` `ido-vertical-mode`
+
+If you use MELPA instead of MELPA Stable, there's no guarantee that
+you'll get something that works; I've accidentally broken master
+before and will unfortunately probably do it again :(
 
 ## Turn it on
 
