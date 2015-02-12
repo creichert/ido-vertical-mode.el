@@ -43,3 +43,12 @@
     (execute-kbd-macro confirm 1)
     (should (string-match "Confirm" (buffer-name (current-buffer))))
     (kill-buffer (current-buffer))))
+
+(ert-deftest ivm-should-handle-fontified-candidates ()
+  (let ((comps '(""
+                 (#(".ido.last" 1 4 (face flx-highlight-face)) "/Users/JS/")
+                 (#("200-ido.el" 4 7 (face flx-highlight-face)) "/Users/JS/.emacs.d/configs/" "~/.emacs.d/configs/"))))
+    (should (not (ido-vertical-comps-empty-p comps)))
+    (should (ido-vertical-comps-empty-p '("" "" "")))
+    (setq ido-matches comps)
+    (should (ido-vertical-completions ""))))
