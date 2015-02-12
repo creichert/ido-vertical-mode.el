@@ -9,13 +9,13 @@
 ;;; otherwise throw void error
 (execute-kbd-macro [24 98 return] 1)
 
-(ert-deftest ido-vertical-decorations-installed ()
+(ert-deftest ivm-should-install-decorations ()
   (ido-vertical-mode 1)
   (let ((prospects (ido-completions "")))
     (should (string-match "->" prospects))
     (should (string-match "\n" prospects))))
 
-(ert-deftest ivm-indicate-more-results ()
+(ert-deftest ivm-should-indicate-more-results ()
   (ido-vertical-mode 1)
   (let ((buffers (mapcar (lambda (num)
                            (get-buffer-create
@@ -28,12 +28,12 @@
       (should (string-match "\.\.\.$" prospects)))
     (mapc 'kill-buffer buffers)))
 
-(ert-deftest ido-vertical-can-be-turned-off ()
+(ert-deftest ivm-should-properly-disable-itself ()
   (ido-vertical-mode 1)
   (ido-vertical-mode -1)
   (should (not (string-match "\n" (ido-completions "")))))
 
-(ert-deftest ivm-show-confirm-dialog ()
+(ert-deftest ivm-should-show-confirm-dialog ()
   (ido-vertical-mode 1)
   (let* ((no-results [24 98 ?t ?h ?i ?s ?s ?h ?o ?u ?l ?d ?n ?o ?t ?m ?a ?t ?c ?h])
          (confirm (vconcat no-results [return])))
