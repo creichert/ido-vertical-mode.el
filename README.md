@@ -27,6 +27,39 @@ before and will unfortunately probably do it again :(
 
 Or you can use `M-x ido-vertical-mode` to toggle it.
 
+## Customize
+
+Make the first match dark gray, the only match a brighter green, and
+the matching text blue:
+
+```elisp
+(progn
+  (setq ido-use-faces t)
+  (face-spec-set 'ido-vertical-first-match-face
+                 '((t (:background "dark gray"))))
+
+  (face-spec-set 'ido-vertical-only-match-face
+                 '((t (:foreground "green"))))
+
+  (face-spec-set 'ido-vertical-match-face
+                 '((t (:foreground "blue")))))
+```
+
+Reset the faces to their defaults:
+
+```elisp
+(progn
+  (setq ido-use-faces t)
+  (face-spec-set 'ido-vertical-first-match-face
+                 '((t (:background nil :weight bold))))
+
+  (face-spec-set 'ido-vertical-only-match-face
+                 '((t (:foreground nil))))
+
+  (face-spec-set 'ido-vertical-match-face
+                 '((t (:foreground nil)))))
+```
+
 ## Keybindings
 
 Since the prospects are listed vertically, it makes sense to use
