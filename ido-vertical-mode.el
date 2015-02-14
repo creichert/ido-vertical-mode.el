@@ -98,7 +98,8 @@ so we can restore it when turning `ido-vertical-mode' off")
   "Face used by Ido Vertical for highlighting only match."
   :group 'ido-vertical-mode)
 
-(defface ido-vertical-match-face nil
+(defface ido-vertical-match-face
+  '((t (:inherit font-lock-variable-name-face :bold t :underline t)))
   "Face used by Ido Vertical for the matched part."
   :group 'ido-vertical-mode)
 
