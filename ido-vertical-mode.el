@@ -89,18 +89,17 @@ so we can restore it when turning `ido-vertical-mode' off")
   :group 'ido-vertical-mode)
 
 (defface ido-vertical-first-match-face
-    '((t (:inherit ido-first-match)))
+  '((t (:inherit ido-first-match)))
   "Face used by Ido Vertical for highlighting first match."
   :group 'ido-vertical-mode)
 
 (defface ido-vertical-only-match-face
-    '((t (:inherit ido-only-match)))
+  '((t (:inherit ido-only-match)))
   "Face used by Ido Vertical for highlighting only match."
   :group 'ido-vertical-mode)
 
-(defface ido-vertical-match-face
-    '((t (:foreground "#b00000")))
-  "Face used by Ido Vertical the matched part."
+(defface ido-vertical-match-face nil
+  "Face used by Ido Vertical for the matched part."
   :group 'ido-vertical-mode)
 
 (defun ido-vertical-comps-empty-p (comps)
