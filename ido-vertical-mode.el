@@ -88,14 +88,6 @@ so we can restore it when turning `ido-vertical-mode' off")
           (const :tag "C-p/up, C-n/down are up/down in match. left or right cycle history or directory." C-n-C-p-up-down-left-right))
   :group 'ido-vertical-mode)
 
-(defun ido-vertical-comps-empty-p (comps)
-  (let ((comps-empty t))
-    (mapc (lambda (it)
-            (setq comps-empty
-                  (and comps-empty (stringp it) (eq it ""))))
-          comps)
-    comps-empty))
-
 ;; borrowed from ido.el and modified to work better when vertical
 (defun ido-vertical-completions (name)
   ;; Return the string that is displayed after the user's text.
@@ -106,6 +98,7 @@ so we can restore it when turning `ido-vertical-mode' off")
                    ido-merged-indicator))
          (lencomps (length comps))
          (additional-items-indicator (nth 3 ido-decorations))
+         (comps-empty (null comps))
          first)
 
     ;; Keep the height of the suggestions list constant by padding
@@ -137,7 +130,7 @@ so we can restore it when turning `ido-vertical-mode' off")
     ;; empty. We pad the list with empty items to keep the list at a
     ;; constant height, so we have to check if the entire list is
     ;; empty, instead of (null comps)
-    (cond ((ido-vertical-comps-empty-p comps)
+    (cond (comps-empty
            (cond
             (ido-show-confirm-message
              (or (nth 10 ido-decorations) " [Confirm]"))
