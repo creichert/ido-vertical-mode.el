@@ -45,8 +45,7 @@
     (kill-buffer (current-buffer))))
 
 (ert-deftest ivm-should-handle-fontified-candidates ()
-  (let ((comps '(""
-                 (#(".ido.last" 1 4 (face flx-highlight-face)) "/Users/JS/")
-                 (#("200-ido.el" 4 7 (face flx-highlight-face)) "/Users/JS/.emacs.d/configs/" "~/.emacs.d/configs/"))))
-    (setq ido-matches comps)
-    (should (ido-vertical-completions ""))))
+  (let ((ido-matches '((#(".ido.last" 1 4 (face ido-vertical-match-face)) "/Users/JS/")
+                       ""
+                       (#("200-ido.el" 4 7 (face ido-vertical-match-face)) "/Users/JS/.emacs.d/configs/" "~/.emacs.d/configs/"))))
+    (should (ido-vertical-completions "ido"))))
