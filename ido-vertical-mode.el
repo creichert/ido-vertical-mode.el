@@ -155,10 +155,9 @@ so we can restore it when turning `ido-vertical-mode' off")
         (let* ((fn (ido-name (car comps)))
                (ln (length fn)))
 
-          (when (and ido-vertical-show-count
-                   (not ido-vertical-count-active))
-              (setcar ido-vertical-decorations (format " [%d]\n-> " lencomps))
-              (setq ido-vertical-count-active t))
+          (when ido-vertical-show-count
+            (setcar ido-vertical-decorations (format " [%d]\n-> " lencomps))
+            (setq ido-vertical-count-active t))
           (when (and (not ido-vertical-show-count)
                      ido-vertical-count-active)
             (setcar ido-vertical-decorations "\n-> ")

@@ -93,14 +93,18 @@
     (when debug (prin1 ido-query))
     (should (memq 'ido-vertical-only-match-face `(,ido-query-first-comp-face)))))
 
-(ert-deftest ivm-should-turn-on-count ()
+(ert-deftest ivm-should-show-count ()
   (let* ((ido-matches '("1" "2" "3" "4" "5"))
          (ido-vertical-show-count t)
          (query (ido-vertical-completions "")))
     ;; Exposes a bug where we were toggling the count on and off
     ;; instead of keeping it on
     (setq query (ido-vertical-completions ""))
-    (should (string= " [5]\n" (substring query 0 5)))))
+    (should (string= " [5]\n" (substring query 0 5)))
+    ;; Count should update when filtering completions
+    (setq ido-matches '("1"))
+    (setq query (ido-vertical-completions "1"))
+    (should (string= " [1]" (substring query 0 4)))))
 
 (ert-deftest ivm-should-turn-off-count ()
   (let* ((ido-matches '("1"))
