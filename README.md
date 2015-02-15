@@ -35,29 +35,34 @@ the matching text blue:
 ```elisp
 (progn
   (setq ido-use-faces t)
-  (face-spec-set 'ido-vertical-first-match-face
-                 '((t (:background "dark gray"))))
+  (set-face-attribute 'ido-vertical-first-match-face nil :background "dark gray")
+  (set-face-attribute 'ido-vertical-only-match-face nil :foreground "green")
+  (set-face-attribute 'ido-vertical-match-face nil :foreground "blue")
+  (ido-vertical-mode 1))
+```
 
-  (face-spec-set 'ido-vertical-only-match-face
-                 '((t (:foreground "green"))))
+Make it look like the screenshot above:
 
-  (face-spec-set 'ido-vertical-match-face
-                 '((t (:foreground "blue")))))
+```elisp
+(progn
+  (setq ido-use-faces t)
+  (set-face-attribute 'ido-vertical-first-match-face nil :foreground "orange")
+  (set-face-attribute 'ido-vertical-only-match-face nil :foreground nil)
+  (set-face-attribute 'ido-vertical-match-face nil :foreground nil)
+  (ido-vertical-mode 1))
 ```
 
 Reset the faces to their defaults:
 
 ```elisp
 (progn
-  (setq ido-use-faces t)
-  (face-spec-set 'ido-vertical-first-match-face
-                 '((t (:background nil :weight bold))))
+  (set-face-attribute 'ido-vertical-first-match-face nil :background nil :foreground nil)
+  (set-face-attribute 'ido-vertical-only-match-face nil :foreground nil)
+  (set-face-attribute 'ido-vertical-match-face nil :foreground nil)
+  (ido-vertical-mode 1))
 
-  (face-spec-set 'ido-vertical-only-match-face
-                 '((t (:foreground nil))))
-
-  (face-spec-set 'ido-vertical-match-face
-                 '((t (:foreground nil)))))
+;; optional
+(setq ido-use-faces nil)
 ```
 
 ## Keybindings
