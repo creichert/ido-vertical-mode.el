@@ -62,10 +62,8 @@
   (let* ((ido-use-faces t)
          (ido-matches '("ido" "ido-vertical"))
          (ido-query (ido-vertical-completions "ido"))
-         ;; pos 8 to 11: the first "ido"
-         (first-comp-pos 8)
+         (first-comp-pos 4)
          (ido-query-first-comp-face (get-text-property first-comp-pos 'face ido-query))
-         ;; pos 15 to 18: the second "ido". pos 19: "-vertical"
          (ido-query-second-comp-face (get-text-property (+ first-comp-pos 7) 'face ido-query))
          (debug nil))
     (when debug (prin1 ido-query))
@@ -78,7 +76,7 @@
   (let* ((ido-use-faces t)
          (ido-matches '("ido" "ido-vertical"))
          (ido-query (ido-vertical-completions "no results"))
-         (first-comp-pos 16)
+         (first-comp-pos 12)
          (second-comp-pos (+ 7 first-comp-pos))
          (ido-query-first-comp-face (get-text-property first-comp-pos 'face ido-query))
          (ido-query-second-comp-face (get-text-property second-comp-pos 'face ido-query))
@@ -91,8 +89,23 @@
   (let* ((ido-use-faces t)
          (ido-matches '("ido"))
          (ido-query (ido-vertical-completions "no results"))
-         (first-comp-pos 8)
+         (first-comp-pos 4)
          (ido-query-first-comp-face (get-text-property first-comp-pos 'face ido-query))
          (debug nil))
     (when debug (prin1 ido-query))
     (should (memq 'ido-vertical-only-match-face `(,ido-query-first-comp-face)))))
+
+(ert-deftest ivm-should-turn-on-count ()
+  (let* ((ido-matches '("1" "2" "3" "4" "5"))
+         (ido-vertical-show-count t)
+         (query (ido-vertical-completions "")))
+    ;; Exposes a bug where we were toggling the count on and off
+    ;; instead of keeping it on
+    (setq query (ido-vertical-completions ""))
+    (should (string= " [5]\n" (substring query 0 5)))))
+
+(ert-deftest ivm-should-turn-off-count ()
+  (let* ((ido-matches '("1"))
+         (ido-vertical-show-count nil)
+         (query (ido-vertical-completions "")))
+    (should (string= "\n-> " (substring-no-properties query 0 4)))))

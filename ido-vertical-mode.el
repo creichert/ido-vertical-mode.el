@@ -29,6 +29,12 @@
 
 (require 'ido)
 
+(defvar ido-vertical-show-count nil
+  "Non nil means show the count of candidates while completing.")
+
+;;; used internally to track whether we're already showing the count
+(setq ido-vertical-count-active nil)
+
 ;;; The following three variables and their comments are lifted
 ;;; directly from `ido.el'; they are defined here to avoid compile-log
 ;;; warnings. See `ido.el' for more information.
@@ -148,7 +154,16 @@ so we can restore it when turning `ido-vertical-mode' off")
     (if (and ido-use-faces comps)
         (let* ((fn (ido-name (car comps)))
                (ln (length fn)))
-          (setcar ido-vertical-decorations (format " [%d]\n-> " lencomps))
+
+          (when (and ido-vertical-show-count
+                   (not ido-vertical-count-active))
+              (setcar ido-vertical-decorations (format " [%d]\n-> " lencomps))
+              (setq ido-vertical-count-active t))
+          (when (and (not ido-vertical-show-count)
+                     ido-vertical-count-active)
+            (setcar ido-vertical-decorations "\n-> ")
+            (setq ido-vertical-count-active nil))
+
           (setq first (format "%s" fn))
           (if (fboundp 'add-face-text-property)
               (add-face-text-property 0 (length first)
