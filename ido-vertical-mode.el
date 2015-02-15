@@ -29,12 +29,6 @@
 
 (require 'ido)
 
-(defvar ido-vertical-show-count nil
-  "Non nil means show the count of candidates while completing.")
-
-;;; used internally to track whether we're already showing the count
-(setq ido-vertical-count-active nil)
-
 ;;; The following three variables and their comments are lifted
 ;;; directly from `ido.el'; they are defined here to avoid compile-log
 ;;; warnings. See `ido.el' for more information.
@@ -84,6 +78,14 @@ so we can restore it when turning `ido-vertical-mode' off")
 (defgroup ido-vertical-mode nil
   "Make ido behave vertically."
   :group 'ido)
+
+(defcustom ido-vertical-show-count nil
+  "Non nil means show the count of candidates while completing."
+  :type 'boolean
+  :group 'ido-vertical-mode)
+
+(defvar ido-vertical-count-active nil
+  "Used internally to track whether we're already showing the count")
 
 (defcustom ido-vertical-define-keys 'C-n-and-C-p-only
   "Defines which keys that `ido-vertical-mode' redefines."
