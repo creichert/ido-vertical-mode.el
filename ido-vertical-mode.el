@@ -143,18 +143,17 @@ so we can restore it when turning `ido-vertical-mode' off")
     (if (and ind ido-use-faces)
         (put-text-property 0 1 'face 'ido-indicator ind))
 
+    (when ido-vertical-show-count
+      (setcar ido-vertical-decorations (format " [%d]\n-> " lencomps))
+      (setq ido-vertical-count-active t))
+    (when (and (not ido-vertical-show-count)
+               ido-vertical-count-active)
+      (setcar ido-vertical-decorations "\n-> ")
+      (setq ido-vertical-count-active nil))
+
     (if (and ido-use-faces comps)
         (let* ((fn (ido-name (car comps)))
                (ln (length fn)))
-
-          (when ido-vertical-show-count
-            (setcar ido-vertical-decorations (format " [%d]\n-> " lencomps))
-            (setq ido-vertical-count-active t))
-          (when (and (not ido-vertical-show-count)
-                     ido-vertical-count-active)
-            (setcar ido-vertical-decorations "\n-> ")
-            (setq ido-vertical-count-active nil))
-
           (setq first (format "%s" fn))
           (if (fboundp 'add-face-text-property)
               (add-face-text-property 0 (length first)

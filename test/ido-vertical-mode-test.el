@@ -96,6 +96,7 @@
 (ert-deftest ivm-should-show-count ()
   (let* ((ido-matches '("1" "2" "3" "4" "5"))
          (ido-vertical-show-count t)
+         (ido-use-faces nil)
          (query (ido-vertical-completions "")))
     ;; Exposes a bug where we were toggling the count on and off
     ;; instead of keeping it on
