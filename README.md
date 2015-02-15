@@ -1,6 +1,6 @@
 # ido-vertical-mode.el
 
-Makes ido-mode display vertically.
+[![Build Status](https://travis-ci.org/gempesaw/ido-vertical-mode.el.svg?branch=master)](https://travis-ci.org/gempesaw/ido-vertical-mode.el) Makes ido-mode display vertically.
 
 ![screenshot.gif](screenshot.gif)
 
