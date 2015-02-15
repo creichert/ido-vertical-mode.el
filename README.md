@@ -39,38 +39,50 @@ Show the count of candidates:
 
 #### Colors
 
-Make it look like @abo-abo's [blog post](http://oremacs.com/2015/02/09/ido-vertical/)
+Make it look like @abo-abo's [blog post](http://oremacs.com/2015/02/09/ido-vertical/):
 
 ```elisp
-(progn
-  (setq ido-use-faces t)
-  (set-face-attribute 'ido-vertical-first-match-face nil :background "#e5b7c0")
-  (set-face-attribute 'ido-vertical-only-match-face nil :foreground "white" :background "#e52b50")
-  (set-face-attribute 'ido-vertical-match-face nil :foreground "#b00000")
-  (ido-vertical-mode 1))
+(setq ido-use-faces t)
+(set-face-attribute 'ido-vertical-first-match-face nil
+                    :background "#e5b7c0")
+(set-face-attribute 'ido-vertical-only-match-face nil
+                    :background "#e52b50"
+                    :foreground "white")
+(set-face-attribute 'ido-vertical-match-face nil
+                    :foreground "#b00000")
+(ido-vertical-mode 1)
 ```
 
 Make it look like the screenshot above:
 
 ```elisp
-(progn
-  (setq ido-use-faces t)
-  (set-face-attribute 'ido-vertical-first-match-face nil :foreground "orange")
-  (set-face-attribute 'ido-vertical-only-match-face nil :foreground nil)
-  (set-face-attribute 'ido-vertical-match-face nil :foreground nil)
-  (ido-vertical-mode 1))
+(setq ido-use-faces t)
+(set-face-attribute 'ido-vertical-first-match-face nil
+                    :background nil
+                    :foreground "orange")
+(set-face-attribute 'ido-vertical-only-match-face nil
+                    :background nil
+                    :foreground nil)
+(set-face-attribute 'ido-vertical-match-face nil
+                    :foreground nil)
+(ido-vertical-mode 1)
 ```
 
 Reset the faces to their defaults:
 
 ```elisp
-(progn
-  (set-face-attribute 'ido-vertical-first-match-face nil :background nil :foreground nil)
-  (set-face-attribute 'ido-vertical-only-match-face nil :background nil :foreground nil)
-  (set-face-attribute 'ido-vertical-match-face nil :background nil :foreground nil)
-  (ido-vertical-mode 1))
+(set-face-attribute 'ido-vertical-first-match-face nil
+                    :background nil
+                    :foreground nil)
+(set-face-attribute 'ido-vertical-only-match-face nil
+                    :background nil
+                    :foreground nil)
+(set-face-attribute 'ido-vertical-match-face nil
+                    :background nil
+                    :foreground nil)
+(ido-vertical-mode 1)
 
-;; optional
+;; optionally
 (setq ido-use-faces nil)
 ```
 
