@@ -50,6 +50,14 @@
                        (#("200-ido.el" 4 7 (face ido-vertical-match-face)) "/Users/JS/.emacs.d/configs/" "~/.emacs.d/configs/"))))
     (should (ido-vertical-completions "ido"))))
 
+;;; The following tests are pretty fragile. ido-vertical-completions
+;;; depends on the global value of ido-matches, which we set. It
+;;; returns the completions as a string, and we can check the text
+;;; properties of particular characters in the return to see that they
+;;; have the expected faces. In particular, the `first-comp-pos'
+;;; variable may need to be updated frequently; set the debug variable
+;;; to true to see what it should be.
+
 (ert-deftest ivm-should-highlight-matched-candidates ()
   (let* ((ido-use-faces t)
          (ido-matches '("ido" "ido-vertical"))
