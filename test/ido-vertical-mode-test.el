@@ -54,15 +54,13 @@
 ;;; depends on the global value of ido-matches, which we set. It
 ;;; returns the completions as a string, and we can check the text
 ;;; properties of particular characters in the return to see that they
-;;; have the expected faces. In particular, the `first-comp-pos'
-;;; variable may need to be updated frequently; set the debug variable
-;;; to true to see what it should be.
+;;; have the expected faces.
 
 (ert-deftest ivm-should-highlight-matched-candidates ()
   (let* ((ido-use-faces t)
          (ido-matches '("ido" "ido-vertical"))
          (ido-query (ido-vertical-completions "ido"))
-         (first-comp-pos 4)
+         (first-comp-pos (string-match "ido" ido-query))
          (ido-query-first-comp-face (get-text-property first-comp-pos 'face ido-query))
          (ido-query-second-comp-face (get-text-property (+ first-comp-pos 7) 'face ido-query))
          (debug nil))
@@ -76,7 +74,7 @@
   (let* ((ido-use-faces t)
          (ido-matches '("ido" "ido-vertical"))
          (ido-query (ido-vertical-completions "no results"))
-         (first-comp-pos 12)
+         (first-comp-pos (string-match "ido" ido-query))
          (second-comp-pos (+ 7 first-comp-pos))
          (ido-query-first-comp-face (get-text-property first-comp-pos 'face ido-query))
          (ido-query-second-comp-face (get-text-property second-comp-pos 'face ido-query))
@@ -89,7 +87,7 @@
   (let* ((ido-use-faces t)
          (ido-matches '("ido"))
          (ido-query (ido-vertical-completions "no results"))
-         (first-comp-pos 4)
+         (first-comp-pos (string-match "ido" ido-query))
          (ido-query-first-comp-face (get-text-property first-comp-pos 'face ido-query))
          (debug nil))
     (when debug (prin1 ido-query))
