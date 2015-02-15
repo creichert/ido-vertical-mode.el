@@ -129,17 +129,20 @@ so we can restore it when turning `ido-vertical-mode' off")
         (progn
           (setq additional-items-indicator "\n")
           (setq comps (append comps (make-list (- (1+ ido-max-prospects) lencomps) "")))))
-    (dotimes (i ido-max-prospects)
-      (setf (nth i comps) (substring (if (listp (nth i comps))
-                                         (car (nth i comps))
-                                       (nth i comps))
-                                     0))
-      (when (string-match name (nth i comps))
-        (ignore-errors
-          (add-face-text-property (match-beginning 0)
-                                  (match-end 0)
-                                  'ido-vertical-match-face
-                                  nil (nth i comps)))))
+
+    (when ido-use-faces
+      (dotimes (i ido-max-prospects)
+        (setf (nth i comps) (substring (if (listp (nth i comps))
+                                           (car (nth i comps))
+                                         (nth i comps))
+                                       0))
+        (when (string-match name (nth i comps))
+          (ignore-errors
+            (add-face-text-property (match-beginning 0)
+                                    (match-end 0)
+                                    'ido-vertical-match-face
+                                    nil (nth i comps))))))
+
     (if (and ind ido-use-faces)
         (put-text-property 0 1 'face 'ido-indicator ind))
 

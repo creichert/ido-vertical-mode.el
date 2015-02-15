@@ -70,6 +70,16 @@
     (should (and (memq 'ido-vertical-match-face `(,ido-query-second-comp-face))
                  (eq nil (get-text-property 19 'face ido-query))))))
 
+(ert-deftest ivm-should-not-highlight-without-ido-use-faces ()
+  (let* ((ido-use-faces nil)
+         (ido-matches '("ido"))
+         (ido-query (ido-vertical-completions "ido"))
+         (first-comp-pos (string-match "ido" ido-query))
+         (ido-query-first-comp-face (get-text-property first-comp-pos 'face ido-query))
+         (debug nil))
+    (when debug (prin1 ido-query))
+    (should (eq nil ido-query-first-comp-face))))
+
 (ert-deftest ivm-should-not-highlight-missed-candidates ()
   (let* ((ido-use-faces t)
          (ido-matches '("ido" "ido-vertical"))
