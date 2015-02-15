@@ -109,14 +109,6 @@ so we can restore it when turning `ido-vertical-mode' off")
   "Face used by Ido Vertical for the matched part."
   :group 'ido-vertical-mode)
 
-(defun ido-vertical-comps-empty-p (comps)
-  (let ((comps-empty t))
-    (mapc (lambda (it)
-            (setq comps-empty
-                  (and comps-empty (stringp it) (eq it ""))))
-          comps)
-    comps-empty))
-
 ;; borrowed from ido.el and modified to work better when vertical
 (defun ido-vertical-completions (name)
   ;; Return the string that is displayed after the user's text.
