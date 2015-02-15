@@ -29,6 +29,12 @@
 
 (require 'ido)
 
+(defvar ido-vertical-show-count nil
+  "Non nil means show the count of candidates while completing.")
+
+;;; used internally to track whether we're already showing the count
+(setq ido-vertical-count-active nil)
+
 ;;; The following three variables and their comments are lifted
 ;;; directly from `ido.el'; they are defined here to avoid compile-log
 ;;; warnings. See `ido.el' for more information.
@@ -88,6 +94,29 @@ so we can restore it when turning `ido-vertical-mode' off")
           (const :tag "C-p/up, C-n/down are up/down in match. left or right cycle history or directory." C-n-C-p-up-down-left-right))
   :group 'ido-vertical-mode)
 
+(defface ido-vertical-first-match-face
+  '((t (:inherit ido-first-match)))
+  "Face used by Ido Vertical for highlighting first match."
+  :group 'ido-vertical-mode)
+
+(defface ido-vertical-only-match-face
+  '((t (:inherit ido-only-match)))
+  "Face used by Ido Vertical for highlighting only match."
+  :group 'ido-vertical-mode)
+
+(defface ido-vertical-match-face
+  '((t (:inherit font-lock-variable-name-face :bold t :underline t)))
+  "Face used by Ido Vertical for the matched part."
+  :group 'ido-vertical-mode)
+
+(defun ido-vertical-comps-empty-p (comps)
+  (let ((comps-empty t))
+    (mapc (lambda (it)
+            (setq comps-empty
+                  (and comps-empty (stringp it) (eq it ""))))
+          comps)
+    comps-empty))
+
 ;; borrowed from ido.el and modified to work better when vertical
 (defun ido-vertical-completions (name)
   ;; Return the string that is displayed after the user's text.
@@ -108,21 +137,52 @@ so we can restore it when turning `ido-vertical-mode' off")
         (progn
           (setq additional-items-indicator "\n")
           (setq comps (append comps (make-list (- (1+ ido-max-prospects) lencomps) "")))))
-
+    (dotimes (i ido-max-prospects)
+      (setf (nth i comps) (substring (if (listp (nth i comps))
+                                         (car (nth i comps))
+                                       (nth i comps))
+                                     0))
+      (when (string-match name (nth i comps))
+        (ignore-errors
+          (add-face-text-property (match-beginning 0)
+                                  (match-end 0)
+                                  'ido-vertical-match-face
+                                  nil (nth i comps)))))
     (if (and ind ido-use-faces)
         (put-text-property 0 1 'face 'ido-indicator ind))
 
     (if (and ido-use-faces comps)
         (let* ((fn (ido-name (car comps)))
                (ln (length fn)))
+
+          (when (and ido-vertical-show-count
+                   (not ido-vertical-count-active))
+              (setcar ido-vertical-decorations (format " [%d]\n-> " lencomps))
+              (setq ido-vertical-count-active t))
+          (when (and (not ido-vertical-show-count)
+                     ido-vertical-count-active)
+            (setcar ido-vertical-decorations "\n-> ")
+            (setq ido-vertical-count-active nil))
+
           (setq first (format "%s" fn))
-          (put-text-property 0 ln 'face
-                             (if (= (length comps) 1)
-                                 (if ido-incomplete-regexp
-                                     'ido-incomplete-regexp
-                                   'ido-only-match)
-                               'ido-first-match)
-                             first)
+          (if (fboundp 'add-face-text-property)
+              (add-face-text-property 0 (length first)
+                                      (cond ((> lencomps 1)
+                                             'ido-vertical-first-match-face)
+
+                                            (ido-incomplete-regexp
+                                             'ido-incomplete-regexp)
+
+                                            (t
+                                             'ido-vertical-only-match-face))
+                                      nil first)
+            (put-text-property 0 ln 'face
+                               (if (= lencomps 1)
+                                   (if ido-incomplete-regexp
+                                       'ido-incomplete-regexp
+                                     'ido-vertical-only-match-face)
+                                 'ido-vertical-first-match-face)
+                               first))
           (if ind (setq first (concat first ind)))
           (setq comps (cons first (cdr comps)))))
 
