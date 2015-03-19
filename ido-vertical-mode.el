@@ -79,13 +79,10 @@ so we can restore it when turning `ido-vertical-mode' off")
   "Make ido behave vertically."
   :group 'ido)
 
-(defcustom ido-vertical-show-count nil
-  "Non nil means show the count of candidates while completing."
-  :type 'boolean
+(defcustom ido-vertical-show-count "  (%d)\n"
+  "When non-nil, it's the `format'-style expression for the candidate count."
+  :type 'string
   :group 'ido-vertical-mode)
-
-(defvar ido-vertical-count-active nil
-  "Used internally to track whether we're already showing the count")
 
 (defcustom ido-vertical-define-keys 'C-n-and-C-p-only
   "Defines which keys that `ido-vertical-mode' redefines."
@@ -148,13 +145,10 @@ so we can restore it when turning `ido-vertical-mode' off")
     (if (and ind ido-use-faces)
         (put-text-property 0 1 'face 'ido-indicator ind))
 
-    (when ido-vertical-show-count
-      (setcar ido-vertical-decorations (format " [%d]\n-> " lencomps))
-      (setq ido-vertical-count-active t))
-    (when (and (not ido-vertical-show-count)
-               ido-vertical-count-active)
-      (setcar ido-vertical-decorations "\n-> ")
-      (setq ido-vertical-count-active nil))
+    (setcar ido-decorations
+            (if ido-vertical-show-count
+                (format ido-vertical-show-count lencomps)
+              (car ido-vertical-decorations)))
 
     (if (and ido-use-faces comps)
         (let* ((fn (ido-name (car comps)))
@@ -250,7 +244,7 @@ so we can restore it when turning `ido-vertical-mode' off")
         (setq ido-vertical-old-decorations ido-decorations)
         (setq ido-vertical-old-completions (symbol-function 'ido-completions))))
 
-  (setq ido-decorations ido-vertical-decorations)
+  (setq ido-decorations (copy-sequence ido-vertical-decorations))
   (fset 'ido-completions 'ido-vertical-completions)
 
   (add-hook 'ido-minibuffer-setup-hook 'ido-vertical-disable-line-truncation)
