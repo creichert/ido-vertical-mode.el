@@ -150,30 +150,21 @@ so we can restore it when turning `ido-vertical-mode' off")
                 (format ido-vertical-show-count lencomps)
               (car ido-vertical-decorations)))
 
-    (if (and ido-use-faces comps)
-        (let* ((fn (ido-name (car comps)))
-               (ln (length fn)))
-          (setq first (format "%s" fn))
-          (if (fboundp 'add-face-text-property)
-              (add-face-text-property 0 (length first)
-                                      (cond ((> lencomps 1)
-                                             'ido-vertical-first-match-face)
+    (when (and ido-use-faces comps)
+      (setq first (copy-sequence (ido-name (car comps))))
+      (ido-vertical-add-face-text-property
+       0 (length first)
+       (cond ((> lencomps 1)
+              'ido-vertical-first-match-face)
 
-                                            (ido-incomplete-regexp
-                                             'ido-incomplete-regexp)
+             (ido-incomplete-regexp
+              'ido-incomplete-regexp)
 
-                                            (t
-                                             'ido-vertical-only-match-face))
-                                      nil first)
-            (put-text-property 0 ln 'face
-                               (if (= lencomps 1)
-                                   (if ido-incomplete-regexp
-                                       'ido-incomplete-regexp
-                                     'ido-vertical-only-match-face)
-                                 'ido-vertical-first-match-face)
-                               first))
-          (if ind (setq first (concat first ind)))
-          (setq comps (cons first (cdr comps)))))
+             (t
+              'ido-vertical-only-match-face))
+       nil first)
+      (if ind (setq first (concat first ind)))
+      (setq comps (cons first (cdr comps))))
 
     ;; Previously we'd check null comps to see if the list was
     ;; empty. We pad the list with empty items to keep the list at a
@@ -214,10 +205,10 @@ so we can restore it when turning `ido-vertical-mode' off")
                               (t
                                (list (nth 2 ido-decorations) ; " | "
                                      (let ((str (substring com 0)))
-                                       (if (and ido-use-faces
-                                                (not (string= str first))
-                                                (ido-final-slash str))
-                                           (put-text-property 0 (length str) 'face 'ido-subdir str))
+                                       (when (and ido-use-faces
+                                                  (ido-final-slash str))
+                                         (ido-vertical-add-face-text-property
+                                          0 (length str) 'ido-subdir nil str))
                                        str)))))
                            comps))))))
 
@@ -294,6 +285,13 @@ This is based on:
   (when (eq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
     (define-key ido-completion-map (kbd "<left>") 'ido-vertical-prev-match)
     (define-key ido-completion-map (kbd "<right>") 'ido-vertical-next-match)))
+
+(defun ido-vertical-add-face-text-property (start end face append object)
+  "Forward to `add-face-text-property' if it's available.
+Otherwise, forward to `put-text-property'."
+  (if (fboundp 'add-face-text-property)
+      (add-face-text-property start end face append object)
+    (put-text-property start end 'face face object)))
 
 ;;;###autoload
 (define-minor-mode ido-vertical-mode
