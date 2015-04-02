@@ -133,6 +133,12 @@ so we can restore it when turning `ido-vertical-mode' off")
           (setq comps (append comps (make-list (- (1+ ido-max-prospects) lencomps) "")))))
 
     (when ido-use-faces
+      ;; Make a copy of [ido-matches], otherwise the selected string
+      ;; could contain text properties which could lead to weird
+      ;; artifacts, e.g. buffer-file-name having text properties.
+      (when (eq comps ido-matches)
+        (setq comps (copy-sequence ido-matches)))
+
       (dotimes (i ido-max-prospects)
         (setf (nth i comps) (substring (if (listp (nth i comps))
                                            (car (nth i comps))
