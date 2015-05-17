@@ -96,6 +96,11 @@ so we can restore it when turning `ido-vertical-mode' off")
           (const :tag "C-p/up, C-n/down are up/down in match. left or right cycle history or directory." C-n-C-p-up-down-left-right))
   :group 'ido-vertical-mode)
 
+(defcustom ido-vertical-keep-static nil
+  "Non nil means to keep the completion list static while moving prev/next elements."
+  :type 'boolean
+  :group 'ido-vertical-mode)
+
 (defface ido-vertical-first-match-face
   '((t (:inherit ido-first-match)))
   "Face used by Ido Vertical for highlighting first match."
@@ -210,6 +215,7 @@ so we can restore it when turning `ido-vertical-mode' off")
                    (when (not ido-use-faces) (nth 7 ido-decorations)))) ;; [Matched]
           (t                            ;multiple matches
            (let* ((items (if (> ido-max-prospects 0) (1+ ido-max-prospects) 999))
+                  (items-count items)
                   (alternatives
                    (apply
                     #'concat
@@ -223,7 +229,7 @@ so we can restore it when turning `ido-vertical-mode' off")
                               ((< items 0) ())
                               ((= items 0) (list additional-items-indicator)) ; " | ..."
                               (t
-                               (list (nth 2 ido-decorations) ; " | "
+                               (list (nth (if (equal (- items-count items 1) ido-vertical-selected-offset) 0 2) ido-decorations)
                                      (let ((str (substring com 0)))
                                        (when (and ido-use-faces
                                                   (not (string= str first))
@@ -240,7 +246,7 @@ so we can restore it when turning `ido-vertical-mode' off")
                         (substring ido-common-match-string (length name))
                         (nth 5 ido-decorations)))
               ;; list all alternatives
-              (nth 0 ido-decorations) ;; { ... }
+              (nth (if (equal 0 ido-vertical-selected-offset) 0 2) ido-decorations)
               alternatives
               (nth 1 ido-decorations)))))))
 
@@ -258,14 +264,16 @@ so we can restore it when turning `ido-vertical-mode' off")
   (fset 'ido-completions 'ido-vertical-completions)
 
   (add-hook 'ido-minibuffer-setup-hook 'ido-vertical-disable-line-truncation)
-  (add-hook 'ido-setup-hook 'ido-vertical-define-keys))
+  (add-hook 'ido-setup-hook 'ido-vertical-define-keys)
+  (add-hook 'ido-setup-hook 'ido-vertical-reset-counters))
 
 (defun turn-off-ido-vertical ()
   (setq ido-decorations ido-vertical-old-decorations)
   (fset 'ido-completions ido-vertical-old-completions)
 
   (remove-hook 'ido-minibuffer-setup-hook 'ido-vertical-disable-line-truncation)
-  (remove-hook 'ido-setup-hook 'ido-vertical-define-keys))
+  (remove-hook 'ido-setup-hook 'ido-vertical-define-keys)
+  (remove-hook 'ido-setup-hook 'ido-vertical-reset-counters))
 
 (defun ido-vertical-next-match ()
   "Call the correct next-match function for right key.
@@ -292,6 +300,58 @@ This is based on:
     (ido-prev-match-dir))
    (t
     (previous-history-element 1))))
+
+(defvar ido-vertical-selected-offset 0
+  "Offset of selected item from the top. ")
+
+(defvar ido-vertical-down-count 0
+  "How many times `ido-next-match' was called.")
+
+(defun ido-vertical-reset-counters ()
+  (setq ido-vertical-selected-offset 0)
+  (setq ido-vertical-down-count 0))
+
+(defun ido-vertical-max-visible ()
+  (1- (window-body-height)))
+
+(defun ido-vertical-maximum-offset ()
+  (1- (min (length ido-matches) (ido-vertical-max-visible))))
+
+(defun ido-vertical-invisible-count ()
+  (- (length ido-matches) (1+ (ido-vertical-maximum-offset))))
+
+(defadvice ido-prev-match (around ido-vertical activate)
+  "Select the prev element if needed."
+  (if (not ido-vertical-keep-static)
+      ad-do-it
+    (if (> ido-vertical-selected-offset 0)
+        (setq ido-vertical-selected-offset (1- ido-vertical-selected-offset))
+      (when (> ido-vertical-down-count 0)
+        (setq ido-vertical-down-count (1- ido-vertical-down-count))
+        ad-do-it))))
+
+(defadvice ido-next-match (around ido-vertical activate)
+  "Select the next element if needed."
+  (if (not ido-vertical-keep-static)
+      ad-do-it
+    (if (< ido-vertical-selected-offset (ido-vertical-maximum-offset))
+        (setq ido-vertical-selected-offset (1+ ido-vertical-selected-offset))
+      (when (< ido-vertical-down-count (ido-vertical-invisible-count))
+        (setq ido-vertical-down-count (1+ ido-vertical-down-count))
+        ad-do-it))))
+
+(defadvice ido-exit-minibuffer (around ido-vertical activate)
+  "Ensure the correct element is selected."
+  (if (not ido-vertical-keep-static)
+      ad-do-it
+    (dotimes (n ido-vertical-selected-offset)
+      (let ((ido-vertical-keep-static nil))
+        (ido-next-match)))
+    ad-do-it))
+
+(defadvice exit-minibuffer (before ido-vertical activate)
+  "Ensure counters are reset before entering previous/next directory."
+  (ido-vertical-reset-counters))
 
 (defun ido-vertical-define-keys () ;; C-n/p is more intuitive in vertical layout
   (when ido-vertical-define-keys

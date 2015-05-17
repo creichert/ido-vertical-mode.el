@@ -39,6 +39,14 @@ for more information.
 
 ## Customize
 
+#### Static / Fixed
+
+Keep the list as static as possible while moving to the next/previous elements:
+
+```elisp
+(setq ido-vertical-keep-static t)
+```
+
 #### Count
 
 Show the count of candidates:
