@@ -127,10 +127,9 @@ so we can restore it when turning `ido-vertical-mode' off")
     ;; Keep the height of the suggestions list constant by padding
     ;; when lencomps is too small. Also, if lencomps is too short, we
     ;; should not indicate that there are additional prospects.
-    (if (< lencomps (1+ ido-max-prospects))
-        (progn
-          (setq additional-items-indicator "\n")
-          (setq comps (append comps (make-list (- (1+ ido-max-prospects) lencomps) "")))))
+    (when (< lencomps (1+ ido-max-prospects))
+      (setq additional-items-indicator "\n")
+      (setq comps (append comps (make-list (- (1+ ido-max-prospects) lencomps) ""))))
 
     (when ido-use-faces
       ;; Make a copy of [ido-matches], otherwise the selected string
@@ -151,8 +150,8 @@ so we can restore it when turning `ido-vertical-mode' off")
                                     'ido-vertical-match-face
                                     nil (nth i comps))))))
 
-    (if (and ind ido-use-faces)
-        (put-text-property 0 1 'face 'ido-indicator ind))
+    (when (and ind ido-use-faces)
+      (put-text-property 0 1 'face 'ido-indicator ind))
 
     (when ido-vertical-show-count
       (setcar ido-vertical-decorations (format " [%d]\n-> " lencomps))
@@ -162,30 +161,30 @@ so we can restore it when turning `ido-vertical-mode' off")
       (setcar ido-vertical-decorations "\n-> ")
       (setq ido-vertical-count-active nil))
 
-    (if (and ido-use-faces comps)
-        (let* ((fn (ido-name (car comps)))
-               (ln (length fn)))
-          (setq first (format "%s" fn))
-          (if (fboundp 'add-face-text-property)
-              (add-face-text-property 0 (length first)
-                                      (cond ((> lencomps 1)
-                                             'ido-vertical-first-match-face)
+    (when (and ido-use-faces comps)
+      (let* ((fn (ido-name (car comps)))
+             (ln (length fn)))
+        (setq first (format "%s" fn))
+        (if (fboundp 'add-face-text-property)
+            (add-face-text-property 0 (length first)
+                                    (cond ((> lencomps 1)
+                                           'ido-vertical-first-match-face)
 
-                                            (ido-incomplete-regexp
-                                             'ido-incomplete-regexp)
+                                          (ido-incomplete-regexp
+                                           'ido-incomplete-regexp)
 
-                                            (t
-                                             'ido-vertical-only-match-face))
-                                      nil first)
-            (put-text-property 0 ln 'face
-                               (if (= lencomps 1)
-                                   (if ido-incomplete-regexp
-                                       'ido-incomplete-regexp
-                                     'ido-vertical-only-match-face)
-                                 'ido-vertical-first-match-face)
-                               first))
-          (if ind (setq first (concat first ind)))
-          (setq comps (cons first (cdr comps)))))
+                                          (t
+                                           'ido-vertical-only-match-face))
+                                    nil first)
+          (put-text-property 0 ln 'face
+                             (if (= lencomps 1)
+                                 (if ido-incomplete-regexp
+                                     'ido-incomplete-regexp
+                                   'ido-vertical-only-match-face)
+                               'ido-vertical-first-match-face)
+                             first))
+        (when ind (setq first (concat first ind)))
+        (setq comps (cons first (cdr comps)))))
 
     ;; Previously we'd check null comps to see if the list was
     ;; empty. We pad the list with empty items to keep the list at a
@@ -208,7 +207,7 @@ so we can restore it when turning `ido-vertical-mode' off")
            (concat (concat (nth 11 ido-decorations) ;; [ ... ]
                            (ido-name (car comps))
                            (nth 12 ido-decorations))
-                   (if (not ido-use-faces) (nth 7 ido-decorations)))) ;; [Matched]
+                   (when (not ido-use-faces) (nth 7 ido-decorations)))) ;; [Matched]
           (t                            ;multiple matches
            (let* ((items (if (> ido-max-prospects 0) (1+ ido-max-prospects) 999))
                   (alternatives
@@ -226,20 +225,20 @@ so we can restore it when turning `ido-vertical-mode' off")
                               (t
                                (list (nth 2 ido-decorations) ; " | "
                                      (let ((str (substring com 0)))
-                                       (if (and ido-use-faces
-                                                (not (string= str first))
-                                                (ido-final-slash str))
-                                           (put-text-property 0 (length str) 'face 'ido-subdir str))
+                                       (when (and ido-use-faces
+                                                  (not (string= str first))
+                                                  (ido-final-slash str))
+                                         (put-text-property 0 (length str) 'face 'ido-subdir str))
                                        str)))))
                            comps))))))
 
              (concat
               ;; put in common completion item -- what you get by pressing tab
-              (if (and (stringp ido-common-match-string)
-                       (> (length ido-common-match-string) (length name)))
-                  (concat (nth 4 ido-decorations) ;; [ ... ]
-                          (substring ido-common-match-string (length name))
-                          (nth 5 ido-decorations)))
+              (when (and (stringp ido-common-match-string)
+                         (> (length ido-common-match-string) (length name)))
+                (concat (nth 4 ido-decorations) ;; [ ... ]
+                        (substring ido-common-match-string (length name))
+                        (nth 5 ido-decorations)))
               ;; list all alternatives
               (nth 0 ido-decorations) ;; { ... }
               alternatives
@@ -250,11 +249,10 @@ so we can restore it when turning `ido-vertical-mode' off")
   (set (make-local-variable 'truncate-lines) nil))
 
 (defun turn-on-ido-vertical ()
-  (if (and (eq nil ido-vertical-old-decorations)
-           (eq nil ido-vertical-old-completions))
-      (progn
-        (setq ido-vertical-old-decorations ido-decorations)
-        (setq ido-vertical-old-completions (symbol-function 'ido-completions))))
+  (when (and (eq nil ido-vertical-old-decorations)
+             (eq nil ido-vertical-old-completions))
+    (setq ido-vertical-old-decorations ido-decorations)
+    (setq ido-vertical-old-completions (symbol-function 'ido-completions)))
 
   (setq ido-decorations ido-vertical-decorations)
   (fset 'ido-completions 'ido-vertical-completions)
