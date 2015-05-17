@@ -311,6 +311,7 @@ This is based on:
 (define-minor-mode ido-vertical-mode
   "Makes ido-mode display vertically."
   :global t
+  :group ido-vertical-mode
   (if ido-vertical-mode
       (turn-on-ido-vertical)
     (turn-off-ido-vertical)))
