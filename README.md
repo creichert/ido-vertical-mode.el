@@ -13,7 +13,7 @@ and [`smex`](https://github.com/nonsequitur/smex).
 
 ## Install via [MELPA Stable](http://stable.melpa.org/#/) or [marmalade](http://marmalade-repo.org)
 
-`M-x` `package-install` `ido-vertical-mode`
+`M-x package-install ido-vertical-mode`
 
 If you use MELPA instead of MELPA Stable, there's no guarantee that
 you'll get something that works; I've accidentally broken master
@@ -21,10 +21,12 @@ before and will unfortunately probably do it again :(
 
 ## Turn it on
 
-    (require 'ido-vertical-mode)
-    (ido-mode 1)
-    (ido-vertical-mode 1)
-    (setq ido-vertical-define-keys 'C-n-and-C-p-only)
+``` elisp
+(require 'ido-vertical-mode)
+(ido-mode 1)
+(ido-vertical-mode 1)
+(setq ido-vertical-define-keys 'C-n-and-C-p-only)
+```
 
 Or you can use `M-x ido-vertical-mode` to toggle it.
 
@@ -41,7 +43,7 @@ for more information.
 
 Show the count of candidates:
 
-```elisp
+``` elisp
 (setq ido-vertical-show-count t)
 ```
 
@@ -49,7 +51,7 @@ Show the count of candidates:
 
 Make it look like @abo-abo's [blog post](http://oremacs.com/2015/02/09/ido-vertical/):
 
-```elisp
+``` elisp
 (setq ido-use-faces t)
 (set-face-attribute 'ido-vertical-first-match-face nil
                     :background "#e5b7c0")
@@ -63,7 +65,7 @@ Make it look like @abo-abo's [blog post](http://oremacs.com/2015/02/09/ido-verti
 
 Make it look like the screenshot above:
 
-```elisp
+```  elisp
 (setq ido-use-faces t)
 (set-face-attribute 'ido-vertical-first-match-face nil
                     :background nil
@@ -78,7 +80,7 @@ Make it look like the screenshot above:
 
 Reset the faces to their defaults:
 
-```elisp
+``` elisp
 (set-face-attribute 'ido-vertical-first-match-face nil
                     :background nil
                     :foreground nil)
@@ -101,23 +103,31 @@ Since the prospects are listed vertically, it might make sense to use
 standard `C-s` and `C-r`.  To accomplish this, set
 `ido-vertical-define-keys` like this:
 
-    (setq ido-vertical-define-keys 'C-n-and-C-p-only)
+``` elisp
+(setq ido-vertical-define-keys 'C-n-and-C-p-only)
+```
 
 The standard binding for `C-p` - `ido-toggle-prefix` - will now be
 available on `C-c C-t`, which was previously unbound in `ido-mode`'s
 key map. Of course, you can also put `ido-toggle-prefix` somewhere
 else on your own:
 
-    ;; manually mimic the 0.1.5 behavior of ido-vertical-mode
-    (define-key ido-completion-map (kbd "M-p") 'ido-toggle-prefix)
+``` elisp
+;; manually mimic the 0.1.5 behavior of ido-vertical-mode
+(define-key ido-completion-map (kbd "M-p") 'ido-toggle-prefix)
+```
 
 You also have the option to rebind some or all of the arrow keys with
 like this:
 
-    (setq ido-vertical-define-keys 'C-n-C-p-up-and-down)
+``` elisp
+(setq ido-vertical-define-keys 'C-n-C-p-up-and-down)
+```
 
 to use up and down to navigate the options, or:
 
-    (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
+``` elisp
+(setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
+```
 
 to use left and right to move through the history/directories.
