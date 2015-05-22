@@ -47,6 +47,8 @@ Keep the list as static as possible while moving to the next/previous elements:
 (setq ido-vertical-keep-static t)
 ```
 
+![screenshot-static.gif](screenshot-static.gif)
+
 #### Count
 
 Show the count of candidates:
