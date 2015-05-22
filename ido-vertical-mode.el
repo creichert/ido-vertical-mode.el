@@ -122,8 +122,6 @@ so we can restore it when turning `ido-vertical-mode' off")
   ;; Modified from `icomplete-completions'.
 
   (let* ((comps ido-matches)
-         (ind (and (consp (car comps)) (> (length (cdr (car comps))) 1)
-                   ido-merged-indicator))
          (lencomps (length comps))
          (additional-items-indicator (nth 3 ido-decorations))
          (comps-empty (null comps))
@@ -155,9 +153,6 @@ so we can restore it when turning `ido-vertical-mode' off")
                                     'ido-vertical-match-face
                                     nil (nth i comps))))))
 
-    (when (and ind ido-use-faces)
-      (put-text-property 0 1 'face 'ido-indicator ind))
-
     (when ido-vertical-show-count
       (setcar ido-vertical-decorations (format " [%d]\n-> " lencomps))
       (setq ido-vertical-count-active t))
@@ -165,31 +160,6 @@ so we can restore it when turning `ido-vertical-mode' off")
                ido-vertical-count-active)
       (setcar ido-vertical-decorations "\n-> ")
       (setq ido-vertical-count-active nil))
-
-    (when (and ido-use-faces comps)
-      (let* ((fn (ido-name (car comps)))
-             (ln (length fn)))
-        (setq first (format "%s" fn))
-        (if (fboundp 'add-face-text-property)
-            (add-face-text-property 0 (length first)
-                                    (cond ((> lencomps 1)
-                                           'ido-vertical-first-match-face)
-
-                                          (ido-incomplete-regexp
-                                           'ido-incomplete-regexp)
-
-                                          (t
-                                           'ido-vertical-only-match-face))
-                                    nil first)
-          (put-text-property 0 ln 'face
-                             (if (= lencomps 1)
-                                 (if ido-incomplete-regexp
-                                     'ido-incomplete-regexp
-                                   'ido-vertical-only-match-face)
-                               'ido-vertical-first-match-face)
-                             first))
-        (when ind (setq first (concat first ind)))
-        (setq comps (cons first (cdr comps)))))
 
     ;; Previously we'd check null comps to see if the list was
     ;; empty. We pad the list with empty items to keep the list at a
@@ -231,10 +201,18 @@ so we can restore it when turning `ido-vertical-mode' off")
                               (t
                                (list (nth (if (equal (- items-count items 1) ido-vertical-selected-offset) 0 2) ido-decorations)
                                      (let ((str (substring com 0)))
-                                       (when (and ido-use-faces
-                                                  (not (string= str first))
-                                                  (ido-final-slash str))
-                                         (put-text-property 0 (length str) 'face 'ido-subdir str))
+                                       (when ido-use-faces
+                                         (ido-vertical-propertize-text 0
+                                                                       (length str)
+                                                                       (cond ((equal lencomps 1)
+                                                                              'ido-vertical-only-match-face)
+                                                                             ((equal (- items-count items 1) ido-vertical-selected-offset)
+                                                                              'ido-vertical-first-match-face)
+                                                                             (ido-incomplete-regexp
+                                                                              'ido-incomplete-regexp)
+                                                                             ((ido-final-slash str)
+                                                                              'ido-subdir))
+                                                                       str))
                                        str)))))
                            comps))))))
 
@@ -249,6 +227,12 @@ so we can restore it when turning `ido-vertical-mode' off")
               (nth (if (equal 0 ido-vertical-selected-offset) 0 2) ido-decorations)
               alternatives
               (nth 1 ido-decorations)))))))
+
+(defun ido-vertical-propertize-text (start stop face str)
+  "Wrapper for `add-face-text-property' or `put-text-property'."
+  (if (fboundp 'add-face-text-property)
+      (add-face-text-property start stop face nil str)
+    (put-text-property start stop 'face face str)))
 
 (defun ido-vertical-disable-line-truncation ()
   "Prevent the newlines in the minibuffer from being truncated"
