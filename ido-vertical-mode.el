@@ -84,9 +84,6 @@ so we can restore it when turning `ido-vertical-mode' off")
   :type 'boolean
   :group 'ido-vertical-mode)
 
-(defvar ido-vertical-count-active nil
-  "Used internally to track whether we're already showing the count")
-
 (defcustom ido-vertical-define-keys nil
   "Defines which keys that `ido-vertical-mode' redefines."
   :type '(choice
@@ -153,14 +150,6 @@ so we can restore it when turning `ido-vertical-mode' off")
                                     'ido-vertical-match-face
                                     nil (nth i comps))))))
 
-    (when ido-vertical-show-count
-      (setcar ido-vertical-decorations (format " [%d]\n-> " lencomps))
-      (setq ido-vertical-count-active t))
-    (when (and (not ido-vertical-show-count)
-               ido-vertical-count-active)
-      (setcar ido-vertical-decorations "\n-> ")
-      (setq ido-vertical-count-active nil))
-
     ;; Previously we'd check null comps to see if the list was
     ;; empty. We pad the list with empty items to keep the list at a
     ;; constant height, so we have to check if the entire list is
@@ -224,7 +213,10 @@ so we can restore it when turning `ido-vertical-mode' off")
                         (substring ido-common-match-string (length name))
                         (nth 5 ido-decorations)))
               ;; list all alternatives
-              (nth (if (equal 0 ido-vertical-selected-offset) 0 2) ido-decorations)
+              (let ((decoration (nth (if (equal 0 ido-vertical-selected-offset) 0 2) ido-decorations)))
+                (when ido-vertical-show-count
+                  (setq decoration (format " [%d]%s" lencomps decoration)))
+                decoration)
               alternatives
               (nth 1 ido-decorations)))))))
 
