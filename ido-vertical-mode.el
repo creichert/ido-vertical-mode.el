@@ -121,12 +121,13 @@ so we can restore it when turning `ido-vertical-mode' off")
   (let* ((completions ido-matches)
          (completions-length (length completions))
          (completions-empty (null completions))
+         (minibuffer-available-lines (1- (min ido-max-prospects (ido-vertical-minibuffer-max-height))))
          (additional-items-indicator (nth 3 ido-decorations)))
 
     ;; Keep the height of the suggestions list constant by padding
     ;; when completions-length is too small. Also, if completions-length is too short, we
     ;; should not indicate that there are additional prospects.
-    (when (< completions-length (1+ ido-max-prospects))
+    (when (< completions-length minibuffer-available-lines)
       (setq additional-items-indicator "\n")
       (setq completions (append completions (make-list (- (1+ ido-max-prospects) completions-length) ""))))
 
@@ -137,7 +138,7 @@ so we can restore it when turning `ido-vertical-mode' off")
       (when (eq completions ido-matches)
         (setq completions (copy-sequence ido-matches)))
 
-      (dotimes (i ido-max-prospects)
+      (dotimes (i minibuffer-available-lines)
         (setf (nth i completions) (substring (if (listp (nth i completions))
                                                  (car (nth i completions))
                                                (nth i completions))
@@ -172,7 +173,7 @@ so we can restore it when turning `ido-vertical-mode' off")
                            (nth 12 ido-decorations))
                    (when (not ido-use-faces) (nth 7 ido-decorations)))) ;; [Matched]
           (t                            ;multiple matches
-           (let* ((items (if (> ido-max-prospects 0) (1+ ido-max-prospects) 999))
+           (let* ((items minibuffer-available-lines)
                   (items-count items)
                   (alternatives
                    (apply
@@ -224,6 +225,10 @@ so we can restore it when turning `ido-vertical-mode' off")
   (if (fboundp 'add-face-text-property)
       (add-face-text-property start stop face nil str)
     (put-text-property start stop 'face face str)))
+
+(defun ido-vertical-minibuffer-max-height ()
+  "Compute the maximum theoric size of the minibuffer."
+  (floor (* max-mini-window-height (/ (frame-pixel-height) (frame-char-height)))))
 
 (defun ido-vertical-disable-line-truncation ()
   "Prevent the newlines in the minibuffer from being truncated"
