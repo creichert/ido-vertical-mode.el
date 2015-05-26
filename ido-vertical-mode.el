@@ -118,43 +118,42 @@ so we can restore it when turning `ido-vertical-mode' off")
   ;; Return the string that is displayed after the user's text.
   ;; Modified from `icomplete-completions'.
 
-  (let* ((comps ido-matches)
-         (lencomps (length comps))
-         (additional-items-indicator (nth 3 ido-decorations))
-         (comps-empty (null comps))
-         first)
+  (let* ((completions ido-matches)
+         (completions-length (length completions))
+         (completions-empty (null completions))
+         (additional-items-indicator (nth 3 ido-decorations)))
 
     ;; Keep the height of the suggestions list constant by padding
-    ;; when lencomps is too small. Also, if lencomps is too short, we
+    ;; when completions-length is too small. Also, if completions-length is too short, we
     ;; should not indicate that there are additional prospects.
-    (when (< lencomps (1+ ido-max-prospects))
+    (when (< completions-length (1+ ido-max-prospects))
       (setq additional-items-indicator "\n")
-      (setq comps (append comps (make-list (- (1+ ido-max-prospects) lencomps) ""))))
+      (setq completions (append completions (make-list (- (1+ ido-max-prospects) completions-length) ""))))
 
     (when ido-use-faces
       ;; Make a copy of [ido-matches], otherwise the selected string
       ;; could contain text properties which could lead to weird
       ;; artifacts, e.g. buffer-file-name having text properties.
-      (when (eq comps ido-matches)
-        (setq comps (copy-sequence ido-matches)))
+      (when (eq completions ido-matches)
+        (setq completions (copy-sequence ido-matches)))
 
       (dotimes (i ido-max-prospects)
-        (setf (nth i comps) (substring (if (listp (nth i comps))
-                                           (car (nth i comps))
-                                         (nth i comps))
-                                       0))
-        (when (string-match name (nth i comps))
+        (setf (nth i completions) (substring (if (listp (nth i completions))
+                                                 (car (nth i completions))
+                                               (nth i completions))
+                                             0))
+        (when (string-match name (nth i completions))
           (ignore-errors
             (add-face-text-property (match-beginning 0)
                                     (match-end 0)
                                     'ido-vertical-match-face
-                                    nil (nth i comps))))))
+                                    nil (nth i completions))))))
 
-    ;; Previously we'd check null comps to see if the list was
+    ;; Previously we'd check null completions to see if the list was
     ;; empty. We pad the list with empty items to keep the list at a
     ;; constant height, so we have to check if the entire list is
-    ;; empty, instead of (null comps)
-    (cond (comps-empty
+    ;; empty, instead of (null completions)
+    (cond (completions-empty
            (cond
             (ido-show-confirm-message
              (or (nth 10 ido-decorations) " [Confirm]"))
@@ -166,10 +165,10 @@ so we can restore it when turning `ido-vertical-mode' off")
              (nth 6 ido-decorations)) ;; [No match]
             (t "")))
           (ido-incomplete-regexp
-           (concat " " (car comps)))
-          ((null (cdr comps))                       ;one match
+           (concat " " (car completions)))
+          ((null (cdr completions))                       ;one match
            (concat (concat (nth 11 ido-decorations) ;; [ ... ]
-                           (ido-name (car comps))
+                           (ido-name (car completions))
                            (nth 12 ido-decorations))
                    (when (not ido-use-faces) (nth 7 ido-decorations)))) ;; [Matched]
           (t                            ;multiple matches
@@ -181,19 +180,19 @@ so we can restore it when turning `ido-vertical-mode' off")
                     (cdr (apply
                           #'nconc
                           (mapcar
-                           (lambda (com)
-                             (setq com (ido-name com))
+                           (lambda (completion)
+                             (setq completion (ido-name completion))
                              (setq items (1- items))
                              (cond
                               ((< items 0) ())
                               ((= items 0) (list additional-items-indicator)) ; " | ..."
                               (t
                                (list (nth (if (equal (- items-count items 1) ido-vertical-selected-offset) 0 2) ido-decorations)
-                                     (let ((str (substring com 0)))
+                                     (let ((str (substring completion 0)))
                                        (when ido-use-faces
                                          (ido-vertical-propertize-text 0
                                                                        (length str)
-                                                                       (cond ((equal lencomps 1)
+                                                                       (cond ((equal completions-length 1)
                                                                               'ido-vertical-only-match-face)
                                                                              ((equal (- items-count items 1) ido-vertical-selected-offset)
                                                                               'ido-vertical-first-match-face)
@@ -203,7 +202,7 @@ so we can restore it when turning `ido-vertical-mode' off")
                                                                               'ido-subdir))
                                                                        str))
                                        str)))))
-                           comps))))))
+                           completions))))))
 
              (concat
               ;; put in common completion item -- what you get by pressing tab
@@ -215,7 +214,7 @@ so we can restore it when turning `ido-vertical-mode' off")
               ;; list all alternatives
               (let ((decoration (nth (if (equal 0 ido-vertical-selected-offset) 0 2) ido-decorations)))
                 (when ido-vertical-show-count
-                  (setq decoration (format " [%d]%s" lencomps decoration)))
+                  (setq decoration (format " [%d]%s" completions-length decoration)))
                 decoration)
               alternatives
               (nth 1 ido-decorations)))))))
