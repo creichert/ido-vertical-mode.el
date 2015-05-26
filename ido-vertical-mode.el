@@ -187,14 +187,14 @@ so we can restore it when turning `ido-vertical-mode' off")
                               ((< items 0) ())
                               ((= items 0) (list additional-items-indicator)) ; " | ..."
                               (t
-                               (list (nth (if (equal (- items-count items 1) ido-vertical-selected-offset) 0 2) ido-decorations)
+                               (list (nth (if (= (- items-count items 1) ido-vertical-selected-offset) 0 2) ido-decorations)
                                      (let ((str (substring completion 0)))
                                        (when ido-use-faces
                                          (ido-vertical-propertize-text 0
                                                                        (length str)
-                                                                       (cond ((equal completions-length 1)
+                                                                       (cond ((= completions-length 1)
                                                                               'ido-vertical-only-match-face)
-                                                                             ((equal (- items-count items 1) ido-vertical-selected-offset)
+                                                                             ((= (- items-count items 1) ido-vertical-selected-offset)
                                                                               'ido-vertical-first-match-face)
                                                                              (ido-incomplete-regexp
                                                                               'ido-incomplete-regexp)
@@ -212,7 +212,7 @@ so we can restore it when turning `ido-vertical-mode' off")
                         (substring ido-common-match-string (length name))
                         (nth 5 ido-decorations)))
               ;; list all alternatives
-              (let ((decoration (nth (if (equal 0 ido-vertical-selected-offset) 0 2) ido-decorations)))
+              (let ((decoration (nth (if (= 0 ido-vertical-selected-offset) 0 2) ido-decorations)))
                 (when ido-vertical-show-count
                   (setq decoration (format " [%d]%s" completions-length decoration)))
                 decoration)
