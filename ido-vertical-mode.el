@@ -168,10 +168,10 @@ so we can restore it when turning `ido-vertical-mode' off")
           (ido-incomplete-regexp
            (concat " " (car completions)))
           ((null (cdr completions))                       ;one match
-           (concat (concat (nth 11 ido-decorations) ;; [ ... ]
-                           (ido-name (car completions))
-                           (nth 12 ido-decorations))
-                   (when (not ido-use-faces) (nth 7 ido-decorations)))) ;; [Matched]
+           (concat (nth 11 ido-decorations) ;; [ ... ]
+                   (ido-name (car completions))
+                   (nth 12 ido-decorations)
+                   (nth 7 ido-decorations))) ;; [Matched]
           (t                            ;multiple matches
            (let* ((items minibuffer-available-lines)
                   (items-count items)
