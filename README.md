@@ -86,18 +86,16 @@ Reset the faces to their defaults:
 (setq ido-use-faces nil)
 ```
 
-#### Keybindings
+#### Alternative Key Bindings
 
-Since the prospects are listed vertically, it may make sense to use
-`C-n/C-p` to navigate through the options. To achieve this, since `C-p`
-is bound to `ido-toggle-prefix` by default, first you must bind `ido-toggle-prefix` 
-to another key, for instance `C-c t`:
-
-    (define-key ido-completion-map (kbd "C-c t") 'ido-toggle-prefix)
-
-Then you can set `ido-vertical-define-keys` like this:
+Since the prospects are listed vertically, it might make sense to use
+`C-n/C-p` to navigate through the options, instead of the default `C-s/C-r`. 
+To accomplish this, set `ido-vertical-define-keys` like this:
 
     (setq ido-vertical-define-keys 'C-n-and-C-p-only)
+    
+The standard binding for `C-p` -- `ido-toggle-prefix` -- will now 
+be available on `C-c C-t`.
 
 You also have the option to rebind some or all of the arrow keys with
 like this:
