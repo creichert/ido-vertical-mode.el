@@ -90,7 +90,7 @@ Reset the faces to their defaults:
 
 Since the prospects are listed vertically, it may make sense to use
 `C-n/C-p` to navigate through the options. To achieve this, since `C-p`
-is bound to `ido-toggle-prefix` by default, you must bind `ido-toggle-prefix` 
+is bound to `ido-toggle-prefix` by default, first you must bind `ido-toggle-prefix` 
 to another key, for instance `C-c t`:
 
     (define-key ido-completion-map (kbd "C-c t") #'ido-toggle-prefix)
