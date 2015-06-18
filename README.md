@@ -11,6 +11,10 @@ You may also be interested in
 [`ido-ubiquitous`](https://github.com/DarwinAwardWinner/ido-ubiquitous)
 and [`smex`](https://github.com/nonsequitur/smex).
 
+## maintainer wanted
+
+See gempesaw/ido-vertical-mode.el#32 for more details.
+
 ## Install via [MELPA Stable](http://stable.melpa.org/#/) or [marmalade](http://marmalade-repo.org)
 
 `M-x` `package-install` `ido-vertical-mode`
