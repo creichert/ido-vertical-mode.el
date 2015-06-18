@@ -89,12 +89,12 @@ Reset the faces to their defaults:
 #### Alternative Key Bindings
 
 Since the prospects are listed vertically, it might make sense to use
-`C-n` and `C-p` to navigate through the options, instead of the default `C-s` and `C-r`. 
+`C-n` and `C-p` to navigate through the options, instead of the standard `C-s` and `C-r`. 
 To accomplish this, set `ido-vertical-define-keys` like this:
 
     (setq ido-vertical-define-keys 'C-n-and-C-p-only)
     
-The standard binding for `C-p` -- `ido-toggle-prefix` -- will now 
+The standard binding for `C-p` - `ido-toggle-prefix` - will now 
 be available on `C-c C-t`.
 
 You also have the option to rebind some or all of the arrow keys with
