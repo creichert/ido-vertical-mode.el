@@ -4,7 +4,7 @@
 
 ;; Author: Steven Degutis
 ;; Maintainer: Daniel Gempesaw <gempesaw@gmail.com>
-;; Version: 0.1.5
+;; Version: 0.1.6
 ;; Keywords: convenience
 ;; URL: https://github.com/gempesaw/ido-vertical-mode.el
 
@@ -87,7 +87,7 @@ so we can restore it when turning `ido-vertical-mode' off")
 (defvar ido-vertical-count-active nil
   "Used internally to track whether we're already showing the count")
 
-(defcustom ido-vertical-define-keys 'C-n-and-C-p-only
+(defcustom ido-vertical-define-keys nil
   "Defines which keys that `ido-vertical-mode' redefines."
   :type '(choice
           (const :tag "Keep default ido keys." nil)
@@ -298,8 +298,7 @@ This is based on:
 (defun ido-vertical-define-keys () ;; C-n/p is more intuitive in vertical layout
   (when ido-vertical-define-keys
     (define-key ido-completion-map (kbd "C-n") 'ido-next-match)
-    (define-key ido-completion-map (kbd "C-p") 'ido-prev-match)
-    (define-key ido-completion-map (kbd "M-p") 'ido-toggle-prefix))
+    (define-key ido-completion-map (kbd "C-p") 'ido-prev-match))
   (when (memq ido-vertical-define-keys '(C-n-C-p-up-and-down C-n-C-p-up-down-left-right))
     (define-key ido-completion-map (kbd "<up>") 'ido-prev-match)
     (define-key ido-completion-map (kbd "<down>") 'ido-next-match))
