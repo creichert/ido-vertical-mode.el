@@ -13,7 +13,7 @@ and [`smex`](https://github.com/nonsequitur/smex).
 
 ## maintainer wanted
 
-See gempesaw/ido-vertical-mode.el#32 for more details.
+See [issue #32](https://github.com/gempesaw/ido-vertical-mode.el/issues/32) for more details.
 
 ## Install via [MELPA Stable](http://stable.melpa.org/#/) or [marmalade](http://marmalade-repo.org)
 
