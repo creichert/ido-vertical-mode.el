@@ -89,7 +89,7 @@ Reset the faces to their defaults:
 #### Alternative Key Bindings
 
 Since the prospects are listed vertically, it might make sense to use
-`C-n/C-p` to navigate through the options, instead of the default `C-s/C-r`. 
+`C-n` and `C-p` to navigate through the options, instead of the default `C-s` and `C-r`. 
 To accomplish this, set `ido-vertical-define-keys` like this:
 
     (setq ido-vertical-define-keys 'C-n-and-C-p-only)
