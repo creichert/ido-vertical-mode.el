@@ -100,11 +100,11 @@ Then you can set `ido-vertical-define-keys` like this:
     (setq ido-vertical-define-keys 'C-n-and-C-p-only)
 
 You also have the option to rebind some or all of the arrow keys with
-`ido-vertical-define-keys`:
+like this:
 
     (setq ido-vertical-define-keys 'C-n-C-p-up-and-down)
 
-to use up and down to navigate the options, or
+to use up and down to navigate the options, or:
 
     (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
 
