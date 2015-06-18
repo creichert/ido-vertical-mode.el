@@ -93,7 +93,7 @@ Since the prospects are listed vertically, it may make sense to use
 is bound to `ido-toggle-prefix` by default, first you must bind `ido-toggle-prefix` 
 to another key, for instance `C-c t`:
 
-    (define-key ido-completion-map (kbd "C-c t") #'ido-toggle-prefix)
+    (define-key ido-completion-map (kbd "C-c t") 'ido-toggle-prefix)
 
 Then you can set `ido-vertical-define-keys` like this:
 
