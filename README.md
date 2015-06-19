@@ -28,8 +28,16 @@ before and will unfortunately probably do it again :(
     (require 'ido-vertical-mode)
     (ido-mode 1)
     (ido-vertical-mode 1)
+    (setq ido-vertical-define-keys 'C-n-and-C-p-only)
 
 Or you can use `M-x ido-vertical-mode` to toggle it.
+
+**N.B.** as of version 1.0.0, we do _not_ bind to <kbd>C-n</kbd> and
+<kbd>C-p</kbd> for you! You must include that last `setq` line in your
+config somewhere. This is out of a desire not to change the default
+emacs keybindings, as <kbd>C-p</kbd> is already bound by default in
+`ido-mode`. See the [keybindings section](#alternative-key-bindings)
+for more information.
 
 ## Customize
 
@@ -93,13 +101,19 @@ Reset the faces to their defaults:
 #### Alternative Key Bindings
 
 Since the prospects are listed vertically, it might make sense to use
-`C-n` and `C-p` to navigate through the options, instead of the standard `C-s` and `C-r`. 
-To accomplish this, set `ido-vertical-define-keys` like this:
+`C-n` and `C-p` to navigate through the options, instead of the
+standard `C-s` and `C-r`.  To accomplish this, set
+`ido-vertical-define-keys` like this:
 
     (setq ido-vertical-define-keys 'C-n-and-C-p-only)
-    
-The standard binding for `C-p` - `ido-toggle-prefix` - will now 
-be available on `C-c C-t`.
+
+The standard binding for `C-p` - `ido-toggle-prefix` - will now be
+available on `C-c C-t`, which was previously unbound in `ido-mode`'s
+key map. Of course, you can also put `ido-toggle-prefix` somewhere
+else on your own:
+
+    ;; manually mimic the 0.1.5 behavior of ido-vertical-mode
+    (define-key ido-completion-map (kbd "M-p") 'ido-toggle-prefix)
 
 You also have the option to rebind some or all of the arrow keys with
 like this:
