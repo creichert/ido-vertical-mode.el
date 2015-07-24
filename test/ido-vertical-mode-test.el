@@ -122,3 +122,16 @@
          (ido-vertical-show-count nil)
          (query (ido-vertical-completions "")))
     (should (string= "\n-> " (substring-no-properties query 0 4)))))
+
+
+;; Test that valid regexp characters are handled properly
+;;
+;; Before #2c18a46, invalid regexp chars would signal an error.
+;; e.g. this test would pass:
+;;
+;; (should-error (ido-vertical-completions "[") :type 'invalid-regexp)
+;;
+(ert-deftest ivm-should-allow-regexp ()
+  (ido-vertical-mode 1)
+  (let ((query (ido-vertical-completions "scratch")))
+    (should (string= "\n-> *Messages*\n" (substring-no-properties query 0 15)))))
