@@ -132,24 +132,25 @@ so we can restore it when turning `ido-vertical-mode' off")
           (setq additional-items-indicator "\n")
           (setq comps (append comps (make-list (- (1+ ido-max-prospects) lencomps) "")))))
 
-    (when ido-use-faces
-      ;; Make a copy of [ido-matches], otherwise the selected string
-      ;; could contain text properties which could lead to weird
-      ;; artifacts, e.g. buffer-file-name having text properties.
-      (when (eq comps ido-matches)
-        (setq comps (copy-sequence ido-matches)))
+    (if (not ido-incomplete-regexp)
+        (when ido-use-faces
+        ;; Make a copy of [ido-matches], otherwise the selected string
+        ;; could contain text properties which could lead to weird
+        ;; artifacts, e.g. buffer-file-name having text properties.
+        (when (eq comps ido-matches)
+            (setq comps (copy-sequence ido-matches)))
 
-      (dotimes (i ido-max-prospects)
-        (setf (nth i comps) (substring (if (listp (nth i comps))
-                                           (car (nth i comps))
-                                         (nth i comps))
-                                       0))
-        (when (string-match name (nth i comps))
-          (ignore-errors
-            (add-face-text-property (match-beginning 0)
-                                    (match-end 0)
-                                    'ido-vertical-match-face
-                                    nil (nth i comps))))))
+        (dotimes (i ido-max-prospects)
+            (setf (nth i comps) (substring (if (listp (nth i comps))
+                                            (car (nth i comps))
+                                            (nth i comps))
+                                        0))
+            (when (string-match (if ido-enable-regexp name (regexp-quote name)) (nth i comps))
+            (ignore-errors
+                (add-face-text-property (match-beginning 0)
+                                        (match-end 0)
+                                        'ido-vertical-match-face
+                                        nil (nth i comps)))))))
 
     (if (and ind ido-use-faces)
         (put-text-property 0 1 'face 'ido-indicator ind))
