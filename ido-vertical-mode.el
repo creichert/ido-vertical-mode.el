@@ -153,11 +153,11 @@ so we can restore it when turning `ido-vertical-mode' off")
     ;; Keep the height of the suggestions list constant by padding
     ;; when lencomps is too small. Also, if lencomps is too short, we
     ;; should not indicate that there are additional prospects.
-    (when (and ido-vertical-pad-list
-               (< lencomps (1+ ido-max-prospects)))
+    (when (< lencomps (1+ ido-max-prospects))
       (setq additional-items-indicator "\n")
-      (setq comps (append comps (make-list (- (1+ ido-max-prospects) lencomps) "")))
-      (setq ncomps (length comps)))
+      (when ido-vertical-pad-list
+        (setq comps (append comps (make-list (- (1+ ido-max-prospects) lencomps) "")))
+        (setq ncomps (length comps))))
 
     (if (not ido-incomplete-regexp)
         (when ido-use-faces
