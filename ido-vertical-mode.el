@@ -96,6 +96,16 @@ so we can restore it when turning `ido-vertical-mode' off")
           (const :tag "C-p/up, C-n/down are up/down in match. left or right cycle history or directory." C-n-C-p-up-down-left-right))
   :group 'ido-vertical-mode)
 
+(defcustom ido-vertical-pad-list t
+  "Non nil means to pad the list of candidates to ensure the minibuffer area is always tall"
+  :type 'boolean
+  :group 'ido-vertical-mode)
+
+(defcustom ido-vertical-disable-if-short nil
+  "Non nil means that ido will go back to horizontal mode if the candidates all fit in the minibuffer area"
+  :type 'boolean
+  :group 'ido-vertical-mode)
+
 (defface ido-vertical-first-match-face
   '((t (:inherit ido-first-match)))
   "Face used by Ido Vertical for highlighting first match."
@@ -111,6 +121,21 @@ so we can restore it when turning `ido-vertical-mode' off")
   "Face used by Ido Vertical for the matched part."
   :group 'ido-vertical-mode)
 
+(defun ido-vertical-or-horizontal-completions (name)
+  (if (and ido-vertical-disable-if-short
+           (<= (length ido-matches) ido-max-prospects))
+
+      (let ((short-result
+             (let ((ido-decorations ido-vertical-old-decorations))
+               (funcall ido-vertical-old-completions name))))
+        (if (>= (window-body-width (minibuffer-window))
+                (+ (minibuffer-prompt-width)
+                   (length short-result)))
+            short-result
+          (ido-vertical-completions name)))
+
+    (ido-vertical-completions name)))
+
 ;; borrowed from ido.el and modified to work better when vertical
 (defun ido-vertical-completions (name)
   ;; Return the string that is displayed after the user's text.
@@ -122,15 +147,17 @@ so we can restore it when turning `ido-vertical-mode' off")
          (lencomps (length comps))
          (additional-items-indicator (nth 3 ido-decorations))
          (comps-empty (null comps))
+         (ncomps lencomps)
          first)
 
     ;; Keep the height of the suggestions list constant by padding
     ;; when lencomps is too small. Also, if lencomps is too short, we
     ;; should not indicate that there are additional prospects.
-    (if (< lencomps (1+ ido-max-prospects))
-        (progn
-          (setq additional-items-indicator "\n")
-          (setq comps (append comps (make-list (- (1+ ido-max-prospects) lencomps) "")))))
+    (when (< lencomps (1+ ido-max-prospects))
+      (setq additional-items-indicator "\n")
+      (when ido-vertical-pad-list
+        (setq comps (append comps (make-list (- (1+ ido-max-prospects) lencomps) "")))
+        (setq ncomps (length comps))))
 
     (if (not ido-incomplete-regexp)
         (when ido-use-faces
@@ -140,17 +167,20 @@ so we can restore it when turning `ido-vertical-mode' off")
           (when (eq comps ido-matches)
             (setq comps (copy-sequence ido-matches)))
 
-          (dotimes (i ido-max-prospects)
-            (setf (nth i comps) (substring (if (listp (nth i comps))
-                                               (car (nth i comps))
-                                             (nth i comps))
-                                           0))
-            (when (string-match (if ido-enable-regexp name (regexp-quote name)) (nth i comps))
-              (ignore-errors
-                (add-face-text-property (match-beginning 0)
-                                        (match-end 0)
-                                        'ido-vertical-match-face
-                                        nil (nth i comps)))))))
+          (dotimes (i ncomps)
+            (let ((comps-i (nth i comps)))
+              (setf comps-i
+                    (setf (nth i comps) (substring (if (listp comps-i)
+                                                       (car comps-i)
+                                                     comps-i)
+                                                   0)))
+
+              (when (string-match (if ido-enable-regexp name (regexp-quote name)) comps-i)
+                (ignore-errors
+                  (add-face-text-property (match-beginning 0)
+                                          (match-end 0)
+                                          'ido-vertical-match-face
+                                          nil comps-i)))))))
 
     (if (and ind ido-use-faces)
         (put-text-property 0 1 'face 'ido-indicator ind))
@@ -258,7 +288,7 @@ so we can restore it when turning `ido-vertical-mode' off")
         (setq ido-vertical-old-completions (symbol-function 'ido-completions))))
 
   (setq ido-decorations ido-vertical-decorations)
-  (fset 'ido-completions 'ido-vertical-completions)
+  (fset 'ido-completions 'ido-vertical-or-horizontal-completions)
 
   (add-hook 'ido-minibuffer-setup-hook 'ido-vertical-disable-line-truncation)
   (add-hook 'ido-setup-hook 'ido-vertical-define-keys))
