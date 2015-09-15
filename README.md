@@ -94,6 +94,9 @@ Reset the faces to their defaults:
 (setq ido-use-faces nil)
 ```
 
+If your regex has multiple groups, `ido-vertical-mode` will highlight
+them independently.
+
 #### Alternative Key Bindings
 
 Since the prospects are listed vertically, it might make sense to use
@@ -121,3 +124,16 @@ to use up and down to navigate the options, or:
     (setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
 
 to use left and right to move through the history/directories.
+
+#### Shrinking to fit
+
+By default, ido-vertical-mode will display `ido-max-prospects` lines
+even if there are fewer suggestions. You can toggle this by setting
+or clearing the customisation `ido-vertical-pad-list`. You may also
+need to set `resize-mini-windows` to `t` to persuade emacs to let the
+minibuffer shrink.
+
+If you want to shrink the results even more, you can customize
+`ido-vertical-disable-if-short`; this will revert to normal ido if
+there are `ido-max-prospects` or fewer things to display, and the
+resulting suggestion string would fit in one line of the minibuffer.
