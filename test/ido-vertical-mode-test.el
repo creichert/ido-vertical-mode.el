@@ -76,7 +76,8 @@
          (ido-query (ido-vertical-completions "ido"))
          (first-comp-pos (string-match "ido" ido-query))
          (ido-query-first-comp-face (get-text-property first-comp-pos 'face ido-query))
-         (debug nil))
+         (debug nil)
+         )
     (when debug (prin1 ido-query))
     (should (eq nil ido-query-first-comp-face))))
 
@@ -113,9 +114,9 @@
     (setq query (ido-vertical-completions ""))
     (should (string= " [5]\n" (substring query 0 5)))
     ;; Count should update when filtering completions
-    (setq ido-matches '("1"))
+    (setq ido-matches '("1" "2"))
     (setq query (ido-vertical-completions "1"))
-    (should (string= " [1]" (substring query 0 4)))))
+    (should (string= " [2]" (substring query 0 4)))))
 
 (ert-deftest ivm-should-turn-off-count ()
   (let* ((ido-matches '("1"))
