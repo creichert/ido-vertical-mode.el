@@ -133,5 +133,7 @@
 ;;
 (ert-deftest ivm-should-allow-regexp ()
   (ido-vertical-mode 1)
-  (let ((query (ido-vertical-completions "scratch")))
-    (should (string= "\n-> *Messages*\n" (substring-no-properties query 0 15)))))
+  (let* ((ido-vertical-show-count nil)
+        (ido-matches '("*scratch*" "Another thing"))
+        (query (ido-vertical-completions "scratch")))
+    (should (string= "\n-> *scratch*\n" (substring-no-properties query 0 14)))))
