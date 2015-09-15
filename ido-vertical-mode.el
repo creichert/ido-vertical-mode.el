@@ -152,7 +152,8 @@ result will never contain more than that many elements."
 (defun ido-vertical--string-with-face (s face)
   "A convenience for taking a string, removing any faces, and then adding a face."
   (let ((s (substring-no-properties s 0)))
-    (add-face-text-property 0 (length s) face nil s)
+    (when ido-use-faces
+        (add-face-text-property 0 (length s) face nil s))
     s))
 
 (defun ido-vertical-completions (name)
