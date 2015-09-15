@@ -9,6 +9,24 @@
 ;;; otherwise throw void error
 (execute-kbd-macro [24 98 return] 1)
 
+(ert-deftest ivm-should-pad-when-padding ()
+  (let* ((ido-matches '("a" "b"))
+         (ido-max-prospects 4)
+         (ido-vertical-pad-list t)
+         (prospect-string (ido-vertical-completions "")))
+
+    (should (= (length (split-string prospect-string "\n"))
+               6))))
+
+(ert-deftest ivm-should-not-pad-when-not-padding ()
+  (let* ((ido-matches '("a" "b"))
+         (ido-max-prospects 4)
+         (ido-vertical-pad-list nil)
+         (prospect-string (ido-vertical-completions "")))
+
+    (should (= (length (split-string prospect-string "\n"))
+               3))))
+
 (ert-deftest ivm-should-install-decorations ()
   (ido-vertical-mode 1)
   (let ((prospects (ido-completions "")))
