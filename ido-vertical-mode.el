@@ -178,7 +178,7 @@ result will never contain more than that many elements."
          (deco-no-match-message (nth 6 ido-decorations))
          (deco-exact-match-message (nth 7 ido-decorations))
          (deco-not-readable-message (nth 8 ido-decorations))
-         (deco-too-big-messsage  (nth 9 ido-decorations) )
+         (deco-too-big-message  (nth 9 ido-decorations) )
          (deco-confirm-message (nth 10 ido-decorations))
          (deco-lb-match (nth 11 ido-decorations))
          (deco-rb-match (nth 12 ido-decorations))
