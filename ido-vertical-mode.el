@@ -151,7 +151,7 @@ result will never contain more than that many elements."
 
 (defun ido-vertical--string-with-face (s face)
   "A convenience for taking a string, removing any faces, and then adding a face."
-  (let ((s (substring s 0)))
+  (let ((s (substring-no-properties s 0)))
     (add-face-text-property 0 (length s) face nil s)
     s))
 
@@ -237,7 +237,7 @@ result will never contain more than that many elements."
                  (setq previous-separator deco-between-prospect)
 
                  ;; remove existing text properties, and then add more on.
-                 (let ((prospect-name (substring (ido-name prospect) 0)))
+                 (let ((prospect-name (substring-no-properties (ido-name prospect) 0)))
                    ;; join the merged indicator on
                    (when (and ind first-prospect)
                      (setq prospect-name (concat prospect-name ind)))
