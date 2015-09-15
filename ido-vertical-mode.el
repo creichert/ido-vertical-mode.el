@@ -135,146 +135,162 @@ so we can restore it when turning `ido-vertical-mode' off")
           (ido-vertical-completions name)))
 
     (ido-vertical-completions name)))
+(defun ido-vertical--prospects (candidates)
+  "Produce a list of candidates to display (prospects) from the list of matches.
 
-;; borrowed from ido.el and modified to work better when vertical
+The `ido-vertical-pad-list' customisation option sets whether the
+list should be padded to 1 + `ido-max-prospects' elements. The
+result will never contain more than that many elements."
+  (let ((ncandidates (length candidates)))
+    (if (and ido-vertical-pad-list
+             (< ncandidates (1+ ido-max-prospects)))
+        (append candidates (make-list (- (1+ ido-max-prospects) ncandidates) ""))
+      ;; take n candidates
+      (butlast candidates
+               (max 0 (- ncandidates (1+ ido-max-prospects)))))))
+
+(defun ido-vertical--string-with-face (s face)
+  "A convenience for taking a string, removing any faces, and then adding a face."
+  (let ((s (substring s 0)))
+    (add-face-text-property 0 (length s) face nil s)
+    s))
+
 (defun ido-vertical-completions (name)
-  ;; Return the string that is displayed after the user's text.
-  ;; Modified from `icomplete-completions'.
+  "Produce text to go in the minibuffer from `ido-matches' and NAME"
+  (let* ((candidates ido-matches)
+         (ncandidates (length ido-matches))
 
-  (let* ((comps ido-matches)
-         (ind (and (consp (car comps)) (> (length (cdr (car comps))) 1)
+         (ind (and (consp (car candidates))
+                   (> (length (cdr (car candidates))) 1)
                    ido-merged-indicator))
-         (lencomps (length comps))
-         (additional-items-indicator (nth 3 ido-decorations))
-         (comps-empty (null comps))
-         (ncomps lencomps)
-         first)
 
-    ;; Keep the height of the suggestions list constant by padding
-    ;; when lencomps is too small. Also, if lencomps is too short, we
-    ;; should not indicate that there are additional prospects.
-    (when (< lencomps (1+ ido-max-prospects))
-      (setq additional-items-indicator "\n")
-      (when ido-vertical-pad-list
-        (setq comps (append comps (make-list (- (1+ ido-max-prospects) lencomps) "")))
-        (setq ncomps (length comps))))
+         (deco-arrow-and-count (if ido-vertical-show-count
+                                   (concat (format " [%d]" ncandidates)
+                                           (nth 0 ido-decorations))
+                                 (nth 0 ido-decorations)))
 
-    (if (not ido-incomplete-regexp)
-        (when ido-use-faces
-          ;; Make a copy of [ido-matches], otherwise the selected string
-          ;; could contain text properties which could lead to weird
-          ;; artifacts, e.g. buffer-file-name having text properties.
-          (when (eq comps ido-matches)
-            (setq comps (copy-sequence ido-matches)))
+         (deco-between-prospect (nth 2 ido-decorations))
+         (deco-more-candidates (nth 3 ido-decorations))
 
-          (dotimes (i ncomps)
-            (let ((comps-i (nth i comps)))
-              (setf comps-i
-                    (setf (nth i comps) (substring (if (listp comps-i)
-                                                       (car comps-i)
-                                                     comps-i)
-                                                   0)))
+         (deco-lb-prefix (nth 4 ido-decorations))
+         (deco-rb-prefix (nth 5 ido-decorations))
+         (deco-no-match-message (nth 6 ido-decorations))
+         (deco-exact-match-message (nth 7 ido-decorations))
+         (deco-not-readable-message (nth 8 ido-decorations))
+         (deco-too-big-messsage  (nth 9 ido-decorations) )
+         (deco-confirm-message (nth 10 ido-decorations))
+         (deco-lb-match (nth 11 ido-decorations))
+         (deco-rb-match (nth 12 ido-decorations))
+         )
 
-              (when (string-match (if ido-enable-regexp name (regexp-quote name)) comps-i)
-                (ignore-errors
-                  (add-face-text-property (match-beginning 0)
-                                          (match-end 0)
-                                          'ido-vertical-match-face
-                                          nil comps-i)))))))
-
-    (if (and ind ido-use-faces)
-        (put-text-property 0 1 'face 'ido-indicator ind))
-
-    (when ido-vertical-show-count
-      (setcar ido-vertical-decorations (format " [%d]\n-> " lencomps))
-      (setq ido-vertical-count-active t))
-    (when (and (not ido-vertical-show-count)
-               ido-vertical-count-active)
-      (setcar ido-vertical-decorations "\n-> ")
-      (setq ido-vertical-count-active nil))
-
-    (if (and ido-use-faces comps)
-        (let* ((fn (ido-name (car comps)))
-               (ln (length fn)))
-          (setq first (format "%s" fn))
-          (if (fboundp 'add-face-text-property)
-              (add-face-text-property 0 (length first)
-                                      (cond ((> lencomps 1)
-                                             'ido-vertical-first-match-face)
-
-                                            (ido-incomplete-regexp
-                                             'ido-incomplete-regexp)
-
-                                            (t
-                                             'ido-vertical-only-match-face))
-                                      nil first)
-            (put-text-property 0 ln 'face
-                               (if (= lencomps 1)
-                                   (if ido-incomplete-regexp
-                                       'ido-incomplete-regexp
-                                     'ido-vertical-only-match-face)
-                                 'ido-vertical-first-match-face)
-                               first))
-          (if ind (setq first (concat first ind)))
-          (setq comps (cons first (cdr comps)))))
-
-    ;; Previously we'd check null comps to see if the list was
-    ;; empty. We pad the list with empty items to keep the list at a
-    ;; constant height, so we have to check if the entire list is
-    ;; empty, instead of (null comps)
-    (cond (comps-empty
+    (cond ((zerop ncandidates)          ; no candidates: we just show an informative string
            (cond
             (ido-show-confirm-message
-             (or (nth 10 ido-decorations) " [Confirm]"))
+             (or deco-confirm-message " [Confirm]"))
             (ido-directory-nonreadable
-             (or (nth 8 ido-decorations) " [Not readable]"))
+             (or deco-not-readable-message  " [Not readable]"))
             (ido-directory-too-big
-             (or (nth 9 ido-decorations) " [Too big]"))
+             (or deco-too-big-message " [Too big]"))
             (ido-report-no-match
-             (nth 6 ido-decorations)) ;; [No match]
+             deco-no-match-message) ;; [No match]
             (t "")))
-          (ido-incomplete-regexp
-           (concat " " (car comps)))
-          ((null (cdr comps))                       ;one match
-           (concat (concat (nth 11 ido-decorations) ;; [ ... ]
-                           (ido-name (car comps))
-                           (nth 12 ido-decorations))
-                   (if (not ido-use-faces) (nth 7 ido-decorations)))) ;; [Matched]
-          (t                            ;multiple matches
-           (let* ((items (if (> ido-max-prospects 0) (1+ ido-max-prospects) 999))
-                  (alternatives
-                   (apply
-                    #'concat
-                    (cdr (apply
-                          #'nconc
-                          (mapcar
-                           (lambda (com)
-                             (setq com (ido-name com))
-                             (setq items (1- items))
-                             (cond
-                              ((< items 0) ())
-                              ((= items 0) (list additional-items-indicator)) ; " | ..."
-                              (t
-                               (list (nth 2 ido-decorations) ; " | "
-                                     (let ((str (substring com 0)))
-                                       (if (and ido-use-faces
-                                                (not (string= str first))
-                                                (ido-final-slash str))
-                                           (put-text-property 0 (length str) 'face 'ido-subdir str))
-                                       str)))))
-                           comps))))))
 
-             (concat
-              ;; put in common completion item -- what you get by pressing tab
-              (if (and (stringp ido-common-match-string)
-                       (> (length ido-common-match-string) (length name)))
-                  (concat (nth 4 ido-decorations) ;; [ ... ]
-                          (substring ido-common-match-string (length name))
-                          (nth 5 ido-decorations)))
-              ;; list all alternatives
-              (nth 0 ido-decorations) ;; { ... }
-              alternatives
-              (nth 1 ido-decorations)))))))
+          (ido-incomplete-regexp        ; incomplete regex - wait until it's finished
+           (concat " "
+                   (ido-vertical--string-with-face
+                    (ido-name (car candidates))
+                    'ido-incomplete-regexp)))
+
+          ((= 1 ncandidates)            ; exactly 1 candidate - just show that as the match
+           (concat
+            deco-lb-match
+
+            (ido-vertical--string-with-face
+             (ido-name (car candidates))
+             'ido-vertical-only-match-face)
+
+            deco-rb-match
+            (unless ido-use-faces deco-exact-match-message)))
+
+          (t                            ; more than 1 candidate, so we need to make something up
+           (let (result-list)
+             ;; we have to put a face on the merged indicator
+
+             (if (and ind ido-use-faces)
+                 (add-face-text-property 0 1 'ido-indicator nil ind))
+
+             ;; add the common match prefix if there is one
+             (when (and (stringp ido-common-match-string)
+                        (> (length ido-common-match-string) (length name)))
+               (push deco-lb-prefix result-list)
+               (push (substring ido-common-match-string (length name)) result-list)
+               (push deco-rb-prefix result-list))
+
+             ;; now fontify and concatenate all the options
+             (let ((previous-separator deco-arrow-and-count)
+                   (prospects (ido-vertical--prospects candidates))
+                   (decoration-regexp (if ido-enable-regexp ido-text (regexp-quote name)))
+                   (first-prospect t))
+               (dolist (prospect prospects)
+                 ;; add the separator from the previous item
+                 (push previous-separator result-list)
+                 (setq previous-separator deco-between-prospect)
+
+                 ;; remove existing text properties, and then add more on.
+                 (let ((prospect-name (substring (ido-name prospect) 0)))
+                   ;; join the merged indicator on
+                   (when (and ind first-prospect)
+                     (setq prospect-name (concat prospect-name ind)))
+
+                   ;; add any other colouring in
+                   (when ido-use-faces
+                     ;; anything not the first item, with a /, gets ido-subdir face
+                     (unless first-prospect
+                       (if (ido-final-slash prospect-name)
+                           (add-face-text-property
+                            0 (length prospect-name)
+                            'ido-subdir
+                            nil prospect-name)))
+
+                     ;; first item gets a special face
+                     (when first-prospect
+                       (add-face-text-property
+                        0 (length prospect-name)
+                        (cond
+                         ((> ncandidates 1) 'ido-vertical-first-match-face)
+                         (ido-incomplete-regexp 'ido-incomplete-regexp)
+                         (t 'ido-vertical-only-match-face))
+                        nil prospect-name))
+
+                     ;; other stuff gets a bit of highlighting
+                     (when (string-match decoration-regexp prospect-name)
+                       (ignore-errors
+                         ;; try and match each group in case it's a regex with groups
+                         (let ((group 1))
+                           (while (match-beginning group)
+                             (add-face-text-property (match-beginning group)
+                                                     (match-end group)
+                                                     'ido-vertical-match-face
+                                                     nil prospect-name)
+                             (incf group))
+                           ;; it's not a regex with groups, so just mark the whole match region.
+                           (when (= 1 group)
+                             (add-face-text-property (match-beginning 0)
+                                                     (match-end 0)
+                                                     'ido-vertical-match-face
+                                                     nil prospect-name)
+                             )))))
+
+                   (push prospect-name result-list))
+                 
+                 (setq first-prospect nil))
+
+               ;; add ... if there are more candidates
+               (when (< (length prospects) ncandidates)
+                 (push deco-more-candidates result-list)))
+
+             (apply #'concat (nreverse result-list)))
+           ))))
 
 (defun ido-vertical-disable-line-truncation ()
   "Prevent the newlines in the minibuffer from being truncated"
