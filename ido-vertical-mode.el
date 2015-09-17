@@ -101,6 +101,16 @@ so we can restore it when turning `ido-vertical-mode' off")
   :type 'boolean
   :group 'ido-vertical-mode)
 
+(defcustom ido-vertical-columns 1
+  "Display up to this many columns of suggestions"
+  :type 'integer
+  :group 'ido-vertical-mode)
+
+(defcustom ido-vertical-rows 8
+  "Display this many rows of suggestions"
+  :type 'integer
+  :group 'ido-vertical-mode)
+
 (defcustom ido-vertical-disable-if-short nil
   "Non nil means that ido will go back to horizontal mode if the candidates all fit in the minibuffer area"
   :type 'boolean
@@ -136,23 +146,6 @@ so we can restore it when turning `ido-vertical-mode' off")
 
     (ido-vertical-completions name)))
 
-(defun ido-vertical--prospects (candidates)
-  "Produce a list of candidates to display (prospects) from the list of matches.
-
-The `ido-vertical-pad-list' customisation option sets whether the
-list should be padded to 1 + `ido-max-prospects' elements. The
-result will never contain more than that many elements."
-  (let ((ncandidates (length candidates)))
-    (if (and ido-vertical-pad-list
-             (< ncandidates (1+ ido-max-prospects)))
-        (append candidates (make-list (- (1+ ido-max-prospects) ncandidates) ""))
-      ;; take n candidates
-
-      ;; just pick 1+ido-max-prospects
-
-      (butlast candidates
-               (max 0 (- ncandidates (1+ ido-max-prospects)))))))
-
 (defun ido-vertical--string-with-face (s face)
   "A convenience for taking a string, removing any faces, and then adding a face."
   (let ((s (substring-no-properties s 0)))
@@ -160,16 +153,18 @@ result will never contain more than that many elements."
         (add-face-text-property 0 (length s) face nil s))
     s))
 
-(setf ido-vertical-rows 8)
+(defun ido-vertical--pack-columns (items     ;; things to pack
+                                   prefix0   ;; prefix of first line
+                                   prefix    ;; prefix of other lines
+                                   separator ;; separator between columns
+                                   ellipsis  ;; ellipsis string to show
+                                   width     ;; max width of a column
+                                   rows      ;; max number of rows
+                                   decorate  ;; function used to fontify etc. items
 
-(defun pack-columns (items
-                     prefix0
-                     prefix
-                     separator
-                     ellipsis
-                     width
-                     rows
-                     decorate)
+                                   pad-rows  ;; if not-nil pad to number of rows
+                                   max-columns ;; max column count
+                                   )
   (let ((min-row-widths (make-list rows 0))
         (separator-length (length separator))
         current-column
@@ -195,7 +190,8 @@ result will never contain more than that many elements."
                                 item-length
                                 separator-length)))
 
-          (if (and columns (>= new-row-width width))
+          (if (and columns (or (>= (length columns) max-columns)
+                               (>= new-row-width width)))
               ;; discard this part of solution and end while loop
               (progn (setf items nil)
                      (setf (nth (- rows 1) (car columns)) ellipsis))
@@ -232,7 +228,8 @@ result will never contain more than that many elements."
           (setf first-column nil)
           ))
 
-      (setq row-list (delete nil row-list))
+      (unless pad-rows
+        (setq row-list (delete nil row-list)))
 
       (dolist (row row-list)
         (setcdr row (cons (car row) (cdr row)))
@@ -242,9 +239,7 @@ result will never contain more than that many elements."
       (mapconcat (lambda (x) (apply #'concat x))
                  row-list
                  "\n")
-
       )))
-
 
 (defun pad-string (string width)
   (concat
@@ -313,12 +308,14 @@ result will never contain more than that many elements."
                (add-face-text-property 0 1 'ido-indicator nil ind))
            (let* ((decoration-regexp (if ido-enable-regexp ido-text (regexp-quote name)))
                   (grid
-                   (pack-columns
+
+                   (ido-vertical--pack-columns
                     candidates
                     deco-arrow-and-count
                     "   "
                     "      "
                     "..."
+                    ;; setting this to zero should make it go to one column
                     (- (window-body-width (minibuffer-window)) 10)
                     ido-vertical-rows
 
@@ -364,7 +361,11 @@ result will never contain more than that many elements."
                                                           'ido-vertical-match-face
                                                           nil prospect-name)
                                   )))))
-                        prospect-name))))
+                        prospect-name))
+
+                    ido-vertical-pad-list
+                    ido-vertical-columns
+                    ))
                   )
 
 
