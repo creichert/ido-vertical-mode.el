@@ -135,6 +135,7 @@ so we can restore it when turning `ido-vertical-mode' off")
           (ido-vertical-completions name)))
 
     (ido-vertical-completions name)))
+
 (defun ido-vertical--prospects (candidates)
   "Produce a list of candidates to display (prospects) from the list of matches.
 
@@ -146,6 +147,9 @@ result will never contain more than that many elements."
              (< ncandidates (1+ ido-max-prospects)))
         (append candidates (make-list (- (1+ ido-max-prospects) ncandidates) ""))
       ;; take n candidates
+
+      ;; just pick 1+ido-max-prospects
+
       (butlast candidates
                (max 0 (- ncandidates (1+ ido-max-prospects)))))))
 
@@ -155,6 +159,97 @@ result will never contain more than that many elements."
     (when ido-use-faces
         (add-face-text-property 0 (length s) face nil s))
     s))
+
+(setf ido-vertical-rows 8)
+
+(defun pack-columns (items
+                     prefix0
+                     prefix
+                     separator
+                     ellipsis
+                     width
+                     rows
+                     decorate)
+  (let ((min-row-widths (make-list rows 0))
+        (separator-length (length separator))
+        current-column
+        columns
+        (column-width 0)
+        (index 0)
+        (max-item-length 0))
+
+    (while items
+      (let* ((item (funcall decorate index (pop items)))
+             (item-length (length item))
+             (separator-length (if columns separator-length 0))
+             (item-row (length current-column))
+             (item-row-width (nth item-row min-row-widths)))
+
+        (incf index)
+        ;; add the item to the column
+
+        (push item current-column)
+        (setf max-item-length (max max-item-length item-length))
+        ;; check whether we fit
+        (let ((new-row-width (+ item-row-width
+                                item-length
+                                separator-length)))
+
+          (if (and columns (>= new-row-width width))
+              ;; discard this part of solution and end while loop
+              (progn (setf items nil)
+                     (setf (nth (- rows 1) (car columns)) ellipsis))
+
+            ;; keep it, and if it's the end then accumulate it
+            (when (or (null items) (= item-row (- rows 1)))
+              ;; new row
+              (dotimes (r rows)
+                (incf (nth r min-row-widths)
+                      (+ separator-length max-item-length)))
+
+              (setf max-item-length 0)
+              (push (nreverse current-column) columns)
+              (setf current-column nil))))
+        ))
+
+    ;; at this point columns contains the columns, so we can produce the rows accordingly.
+    ;(message (format "%s %d" min-row-widths width))
+    (let* ((row-list (make-list rows nil))
+           (first-column t))
+
+      ;; append each column to each row
+      (dolist (column columns)
+        (let ((max-width (apply #'max (mapcar #'length column)))
+              (row-list row-list))
+
+          (dolist (cell column)
+            (push (if first-column
+                      (pad-string cell max-width)
+                    (concat (pad-string cell max-width) separator))
+                  (car row-list))
+            (pop row-list)
+            )
+          (setf first-column nil)
+          ))
+
+      (setq row-list (delete nil row-list))
+
+      (dolist (row row-list)
+        (setcdr row (cons (car row) (cdr row)))
+        (setcar row prefix0)
+        (setf prefix0 prefix))
+
+      (mapconcat (lambda (x) (apply #'concat x))
+                 row-list
+                 "\n")
+
+      )))
+
+
+(defun pad-string (string width)
+  (concat
+   string
+   (make-list (- width (length string)) 32)))
 
 (defun ido-vertical-completions (name)
   "Produce text to go in the minibuffer from `ido-matches' and NAME"
@@ -214,83 +309,76 @@ result will never contain more than that many elements."
             (unless ido-use-faces deco-exact-match-message)))
 
           (t                            ; more than 1 candidate, so we need to make something up
-           (let (result-list)
-             ;; we have to put a face on the merged indicator
+           (if (and ind ido-use-faces)
+               (add-face-text-property 0 1 'ido-indicator nil ind))
+           (let* ((decoration-regexp (if ido-enable-regexp ido-text (regexp-quote name)))
+                  (grid
+                   (pack-columns
+                    candidates
+                    deco-arrow-and-count
+                    "   "
+                    "      "
+                    "..."
+                    (- (window-body-width (minibuffer-window)) 10)
+                    ido-vertical-rows
 
-             (if (and ind ido-use-faces)
-                 (add-face-text-property 0 1 'ido-indicator nil ind))
+                    (lambda (index item)
+                      (let ((prospect-name (substring-no-properties (ido-name item) 0)))
+                        (when (and ind (zerop index))
+                          (setf prospect-name (concat prospect-name ind)))
 
-             ;; add the common match prefix if there is one
-             (when (and (stringp ido-common-match-string)
+                        (when ido-use-faces
+                          ;; anything not the first item, with a /, gets ido-subdir face
+                          (unless (zerop index)
+                            (if (ido-final-slash prospect-name)
+                                (add-face-text-property
+                                 0 (length prospect-name)
+                                 'ido-subdir
+                                 nil prospect-name)))
+
+                          ;; first item gets a special face
+                          (when (zerop index)
+                            (add-face-text-property
+                             0 (length prospect-name)
+                             (cond
+                              ((> ncandidates 1) 'ido-vertical-first-match-face)
+                              (ido-incomplete-regexp 'ido-incomplete-regexp)
+                              (t 'ido-vertical-only-match-face))
+                             nil prospect-name))
+
+                          ;; other stuff gets a bit of highlighting
+                          (when (string-match decoration-regexp prospect-name)
+                            (ignore-errors
+                              ;; try and match each group in case it's a regex with groups
+                              (let ((group 1))
+                                (while (match-beginning group)
+                                  (add-face-text-property (match-beginning group)
+                                                          (match-end group)
+                                                          'ido-vertical-match-face
+                                                          nil prospect-name)
+                                  (incf group))
+                                ;; it's not a regex with groups, so just mark the whole match region.
+                                (when (= 1 group)
+                                  (add-face-text-property (match-beginning 0)
+                                                          (match-end 0)
+                                                          'ido-vertical-match-face
+                                                          nil prospect-name)
+                                  )))))
+                        prospect-name))))
+                  )
+
+
+             (if (and (stringp ido-common-match-string)
                         (> (length ido-common-match-string) (length name)))
-               (push deco-lb-prefix result-list)
-               (push (substring ido-common-match-string (length name)) result-list)
-               (push deco-rb-prefix result-list))
+               (concat
+                deco-lb-prefix
+                (substring ido-common-match-string (length name))
+                deco-rb-prefix
+                grid)
+               grid)
+             )
 
-             ;; now fontify and concatenate all the options
-             (let ((previous-separator deco-arrow-and-count)
-                   (prospects (ido-vertical--prospects candidates))
-                   (decoration-regexp (if ido-enable-regexp ido-text (regexp-quote name)))
-                   (first-prospect t))
-               (dolist (prospect prospects)
-                 ;; add the separator from the previous item
-                 (push previous-separator result-list)
-                 (setq previous-separator deco-between-prospect)
 
-                 ;; remove existing text properties, and then add more on.
-                 (let ((prospect-name (substring-no-properties (ido-name prospect) 0)))
-                   ;; join the merged indicator on
-                   (when (and ind first-prospect)
-                     (setq prospect-name (concat prospect-name ind)))
-
-                   ;; add any other colouring in
-                   (when ido-use-faces
-                     ;; anything not the first item, with a /, gets ido-subdir face
-                     (unless first-prospect
-                       (if (ido-final-slash prospect-name)
-                           (add-face-text-property
-                            0 (length prospect-name)
-                            'ido-subdir
-                            nil prospect-name)))
-
-                     ;; first item gets a special face
-                     (when first-prospect
-                       (add-face-text-property
-                        0 (length prospect-name)
-                        (cond
-                         ((> ncandidates 1) 'ido-vertical-first-match-face)
-                         (ido-incomplete-regexp 'ido-incomplete-regexp)
-                         (t 'ido-vertical-only-match-face))
-                        nil prospect-name))
-
-                     ;; other stuff gets a bit of highlighting
-                     (when (string-match decoration-regexp prospect-name)
-                       (ignore-errors
-                         ;; try and match each group in case it's a regex with groups
-                         (let ((group 1))
-                           (while (match-beginning group)
-                             (add-face-text-property (match-beginning group)
-                                                     (match-end group)
-                                                     'ido-vertical-match-face
-                                                     nil prospect-name)
-                             (incf group))
-                           ;; it's not a regex with groups, so just mark the whole match region.
-                           (when (= 1 group)
-                             (add-face-text-property (match-beginning 0)
-                                                     (match-end 0)
-                                                     'ido-vertical-match-face
-                                                     nil prospect-name)
-                             )))))
-
-                   (push prospect-name result-list))
-                 
-                 (setq first-prospect nil))
-
-               ;; add ... if there are more candidates
-               (when (< (length prospects) ncandidates)
-                 (push deco-more-candidates result-list)))
-
-             (apply #'concat (nreverse result-list)))
            ))))
 
 (defun ido-vertical-disable-line-truncation ()
