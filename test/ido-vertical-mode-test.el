@@ -11,16 +11,19 @@
 
 (ert-deftest ivm-should-pad-when-padding ()
   (let* ((ido-matches '("a" "b"))
-         (ido-max-prospects 4)
+         (ido-vertical-columns 1)
+         (ido-vertical-rows 6)
          (ido-vertical-pad-list t)
          (prospect-string (ido-vertical-completions "")))
 
     (should (= (length (split-string prospect-string "\n"))
-               6))))
+               7)))
+               )
 
 (ert-deftest ivm-should-not-pad-when-not-padding ()
   (let* ((ido-matches '("a" "b"))
-         (ido-max-prospects 4)
+         (ido-vertical-rows 4)
+         (ido-vertical-columns 1)
          (ido-vertical-pad-list nil)
          (prospect-string (ido-vertical-completions "")))
 
@@ -76,6 +79,7 @@
 
 (ert-deftest ivm-should-highlight-matched-candidates ()
   (let* ((ido-use-faces t)
+         (ido-vertical-columns 1)
          (ido-matches '("ido" "ido-vertical"))
          (ido-query (ido-vertical-completions "ido"))
          (first-comp-pos (string-match "ido" ido-query))
@@ -153,6 +157,8 @@
 (ert-deftest ivm-should-allow-regexp ()
   (ido-vertical-mode 1)
   (let* ((ido-vertical-show-count nil)
-        (ido-matches '("*scratch*" "Another thing"))
-        (query (ido-vertical-completions "scratch")))
+         (ido-vertical-columns 1)
+         (ido-vertical-rows 8)
+         (ido-matches '("*scratch*" "*scratch*"))
+         (query (ido-vertical-completions "scratch")))
     (should (string= "\n-> *scratch*\n" (substring-no-properties query 0 14)))))

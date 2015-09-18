@@ -311,8 +311,15 @@ so we can restore it when turning `ido-vertical-mode' off")
           (incf column-index)
           ))
 
-      (unless pad-rows
+      (if pad-rows
+          (dotimes (row rows)
+            (when (null (nth row row-list))
+                        (setf (nth row row-list)
+                              (list ""))))
+
         (setq row-list (delete nil row-list)))
+
+
 
       (dolist (row row-list)
         (setcdr row (cons (car row) (cdr row)))
