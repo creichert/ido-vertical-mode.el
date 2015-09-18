@@ -93,7 +93,8 @@ so we can restore it when turning `ido-vertical-mode' off")
           (const :tag "Keep default ido keys." nil)
           (const :tag "C-p and C-n are up & down in match" C-n-and-C-p-only)
           (const :tag "C-p/up and C-n/down are up and down in match." C-n-C-p-up-and-down)
-          (const :tag "C-p/up, C-n/down are up/down in match. left or right cycle history or directory." C-n-C-p-up-down-left-right))
+          (const :tag "C-p/up, C-n/down are up/down in match. left or right cycle history or directory." C-n-C-p-up-down-left-right)
+          (const :tag "Left, right, up and down move around in the grid" grid-movement))
   :group 'ido-vertical-mode)
 
 (defcustom ido-vertical-pad-list t
@@ -146,12 +147,89 @@ so we can restore it when turning `ido-vertical-mode' off")
 
     (ido-vertical-completions name)))
 
+(defvar ido-vertical--visible-count 0
+  "how many items got drawn - modified by using ido-vertical--pack-columns")
+
+(defvar ido-vertical--visible-rows 0)
+(defvar ido-vertical--visible-cols 0)
+
+(defvar ido-vertical--offset 0
+  "offset into the drawn items")
+
+(add-hook 'ido-setup-hook
+          (lambda () (setf ido-vertical--offset 0)))
+
+(defun ido-vertical-move (fn)
+  (let* ((current-row (% ido-vertical--offset ido-vertical--visible-rows))
+         (current-col (/ ido-vertical--offset ido-vertical--visible-rows))
+         (posn (funcall fn current-row current-col))
+         (row (car posn))
+         (col (cdr posn)))
+    (setf ido-vertical--offset
+          (+ row
+             (* col ido-vertical--visible-rows)))
+
+    (when (>= ido-vertical--offset
+              ido-vertical--visible-count)
+      (when ido-matches
+        (let ((next (nth ido-vertical--offset ido-matches)))
+          (setq ido-cur-list (ido-chop ido-cur-list next))
+          (setq ido-rescan t)
+          (setq ido-rotate t)))
+
+      (setf ido-vertical--offset 0))
+
+    (when (< ido-vertical--offset 0)
+      (setf ido-vertical--offset 0)
+      (ido-prev-match))))
+
+(defun ido-vertical-grid-down ()
+  "Put first element of `ido-matches' at the end of the list."
+  (interactive)
+  (ido-vertical-move ;; todo make me a macro?
+   (lambda (row col)
+     (let ((newrow (1+ row)))
+       (if (= newrow ido-vertical--visible-rows)
+           (cons 0 (1+ col))
+         (cons newrow col))))))
+
+(defun ido-vertical-grid-up ()
+  "Put last element of `ido-matches' at the front of the list."
+  (interactive)
+  (ido-vertical-move
+   (lambda (row col)
+     (let ((newrow (- row 1)))
+       (if (< newrow 0)
+           (cons (- ido-vertical--visible-rows 1) (- col 1))
+         (cons newrow col))))))
+
+(defun ido-vertical-grid-right ()
+  (interactive)
+  (ido-vertical-move
+   (lambda (row col)
+     (let ((newcol (1+ col)))
+       (if (>= newcol ido-vertical--visible-cols)
+           (cons (1+ row) 0)
+         (cons row newcol))))))
+
+(defun ido-vertical-grid-left ()
+  (interactive)
+  (ido-vertical-move
+   (lambda (row col)
+     (let ((newcol (- col 1)))
+       (if (< newcol 0)
+           (cons (- row 1) (- ido-vertical--visible-cols 1))
+         (cons row newcol))))))
+
+
 (defun ido-vertical--string-with-face (s face)
-  "A convenience for taking a string, removing any faces, and then adding a face."
+  "A convenience for taking a string, removing any faces, and then adding a f ace."
   (let ((s (substring-no-properties s 0)))
     (when ido-use-faces
         (add-face-text-property 0 (length s) face nil s))
     s))
+
+;; TODO rotate grid. not sure how ido really works so this is hard to get right.
 
 (defun ido-vertical--pack-columns (items     ;; things to pack
                                    prefix0   ;; prefix of first line
@@ -165,20 +243,23 @@ so we can restore it when turning `ido-vertical-mode' off")
                                    pad-rows  ;; if not-nil pad to number of rows
                                    max-columns ;; max column count
                                    )
-  (let ((min-row-widths (make-list rows 0))
-        (separator-length (length separator))
+  (let ((separator-length (length separator))
         current-column
         columns
         (column-width 0)
         (index 0)
         (max-item-length 0))
 
+    (setf ido-vertical--visible-count 0
+          ido-vertical--visible-rows rows
+          ido-vertical--visible-cols 0)
+
     (while items
       (let* ((item (funcall decorate index (pop items)))
              (item-length (length item))
              (separator-length (if columns separator-length 0))
              (item-row (length current-column))
-             (item-row-width (nth item-row min-row-widths)))
+             )
 
         (incf index)
         ;; add the item to the column
@@ -186,24 +267,21 @@ so we can restore it when turning `ido-vertical-mode' off")
         (push item current-column)
         (setf max-item-length (max max-item-length item-length))
         ;; check whether we fit
-        (let ((new-row-width (+ item-row-width
-                                item-length
-                                separator-length)))
+        (let ((new-row-width (+ (* max-item-length (+ 1 (length columns)))
+                                (* separator-length (length columns))
+                                )))
 
           (if (and columns (or (>= (length columns) max-columns)
                                (>= new-row-width width)))
               ;; discard this part of solution and end while loop
               (progn (setf items nil)
-                     (setf (nth (- rows 1) (car columns)) ellipsis))
+                     (setf (nth (- rows 1) (car columns)) ellipsis)
+                     (decf ido-vertical--visible-count))
 
             ;; keep it, and if it's the end then accumulate it
             (when (or (null items) (= item-row (- rows 1)))
               ;; new row
-              (dotimes (r rows)
-                (incf (nth r min-row-widths)
-                      (+ separator-length max-item-length)))
-
-              (setf max-item-length 0)
+              (incf ido-vertical--visible-cols)
               (push (nreverse current-column) columns)
               (setf current-column nil))))
         ))
@@ -211,21 +289,26 @@ so we can restore it when turning `ido-vertical-mode' off")
     ;; at this point columns contains the columns, so we can produce the rows accordingly.
     ;(message (format "%s %d" min-row-widths width))
     (let* ((row-list (make-list rows nil))
-           (first-column t))
+           (column-index 0)
+           (column-count (length columns)))
 
       ;; append each column to each row
       (dolist (column columns)
-        (let ((max-width (apply #'max (mapcar #'length column)))
+        (let ((max-width max-item-length)
+                                        ; this next is if you want variable width columns
+                                        ;(apply #'max (mapcar #'length column)))
               (row-list row-list))
 
           (dolist (cell column)
-            (push (if first-column
-                      (pad-string cell max-width)
-                    (concat (pad-string cell max-width) separator))
+            (incf ido-vertical--visible-count)
+            (push (if (zerop column-index)
+                       cell
+                       (concat (pad-string cell max-width) separator))
+
                   (car row-list))
             (pop row-list)
             )
-          (setf first-column nil)
+          (incf column-index)
           ))
 
       (unless pad-rows
@@ -245,6 +328,42 @@ so we can restore it when turning `ido-vertical-mode' off")
   (concat
    string
    (make-list (- width (length string)) 32)))
+
+(defun ido-vertical--fewer-rows (candidates ncandidates available-width separator-width)
+  "try and use fewer rows"
+  (if (or ido-vertical-pad-list
+          (>= ncandidates
+              (* ido-vertical-rows ido-vertical-columns)))
+            ido-vertical-rows
+    ;; if we are not padding and we won't overflow, then layout the other way around
+    (let* ((maxwidth
+            (apply #'max (mapcar (lambda (x) (length (ido-name x))) candidates)))
+           (columns
+            (/ (- available-width separator-width) (+ maxwidth separator-width))))
+      (if (= columns 0)
+          ido-vertical-rows
+        (max 1 (min ido-vertical-rows
+                    (/ (+ ncandidates columns -1)
+                       columns)))))))
+
+(defun ido-vertical--exit-minibuffer (o &rest args)
+  ;; make ido know that current match is selected
+  (message (format  "exit minibuffer - fiddle offset %d" ido-vertical--offset))
+  (dotimes (n ido-vertical--offset)
+    (ido-next-match))
+
+  ;; (when ido-matches
+  ;;   (let ((next (nth ido-vertical--offset ido-matches)))
+  ;;     (setq ido-cur-list (ido-chop ido-cur-list next))
+  ;;     (setq ido-rescan t)
+  ;;     (setq ido-rotate t)))
+
+  ;; carry on
+  (setf ido-vertical--offset 0)
+  (apply o args))
+
+(advice-add 'ido-exit-minibuffer :around #'ido-vertical--exit-minibuffer)
+(advice-remove 'ido-exit-minibuffer #'ido-vertical--exit-minibuffer)
 
 (defun ido-vertical-completions (name)
   "Produce text to go in the minibuffer from `ido-matches' and NAME"
@@ -307,26 +426,28 @@ so we can restore it when turning `ido-vertical-mode' off")
            (if (and ind ido-use-faces)
                (add-face-text-property 0 1 'ido-indicator nil ind))
            (let* ((decoration-regexp (if ido-enable-regexp ido-text (regexp-quote name)))
+                  (available-width (- (window-body-width (minibuffer-window)) 10))
+                  (column-separator "   ")
                   (grid
 
                    (ido-vertical--pack-columns
                     candidates
                     deco-arrow-and-count
                     "   "
-                    "      "
+                    column-separator
                     "..."
-                    ;; setting this to zero should make it go to one column
-                    (- (window-body-width (minibuffer-window)) 10)
-                    ido-vertical-rows
+
+                    available-width
+                    (ido-vertical--fewer-rows candidates ncandidates available-width (length column-separator))
 
                     (lambda (index item)
                       (let ((prospect-name (substring-no-properties (ido-name item) 0)))
-                        (when (and ind (zerop index))
+                        (when (and ind (= ido-vertical--offset index))
                           (setf prospect-name (concat prospect-name ind)))
 
                         (when ido-use-faces
                           ;; anything not the first item, with a /, gets ido-subdir face
-                          (unless (zerop index)
+                          (unless (= ido-vertical--offset index)
                             (if (ido-final-slash prospect-name)
                                 (add-face-text-property
                                  0 (length prospect-name)
@@ -334,7 +455,7 @@ so we can restore it when turning `ido-vertical-mode' off")
                                  nil prospect-name)))
 
                           ;; first item gets a special face
-                          (when (zerop index)
+                          (when (= ido-vertical--offset index)
                             (add-face-text-property
                              0 (length prospect-name)
                              (cond
@@ -378,8 +499,6 @@ so we can restore it when turning `ido-vertical-mode' off")
                 grid)
                grid)
              )
-
-
            ))))
 
 (defun ido-vertical-disable-line-truncation ()
@@ -442,7 +561,12 @@ This is based on:
     (define-key ido-completion-map (kbd "<down>") 'ido-next-match))
   (when (eq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
     (define-key ido-completion-map (kbd "<left>") 'ido-vertical-prev-match)
-    (define-key ido-completion-map (kbd "<right>") 'ido-vertical-next-match)))
+    (define-key ido-completion-map (kbd "<right>") 'ido-vertical-next-match))
+  (when (eq ido-vertical-define-keys 'grid-movement)
+    (define-key ido-completion-map (kbd "<up>") 'ido-vertical-grid-up)
+    (define-key ido-completion-map (kbd "<down>") 'ido-vertical-grid-down)
+    (define-key ido-completion-map (kbd "<left>") 'ido-vertical-grid-left)
+    (define-key ido-completion-map (kbd "<right>") 'ido-vertical-grid-right)))
 
 ;;;###autoload
 (define-minor-mode ido-vertical-mode
