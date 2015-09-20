@@ -355,9 +355,8 @@ so we can restore it when turning `ido-vertical-mode' off")
 
 (defun ido-vertical--exit-minibuffer (o &rest args)
   ;; make ido know that current match is selected
-  (message (format  "exit minibuffer - fiddle offset %d" ido-vertical--offset))
   (dotimes (n ido-vertical--offset)
-    (ido-next-match))
+    (ido-next-match)) ;; for some reason below doesn't work
 
   ;; (when ido-matches
   ;;   (let ((next (nth ido-vertical--offset ido-matches)))
@@ -370,7 +369,42 @@ so we can restore it when turning `ido-vertical-mode' off")
   (apply o args))
 
 (advice-add 'ido-exit-minibuffer :around #'ido-vertical--exit-minibuffer)
-(advice-remove 'ido-exit-minibuffer #'ido-vertical--exit-minibuffer)
+
+;; (defvar ido-vertical--just-activated nil)
+
+;; (defun ido-vertical--set-matches (o &rest args)
+;;   ;; keep position when possible?
+;;   (if ido-vertical--just-activated
+;;       (progn
+;;         (setf ido-vertical--just-activated nil)
+;;         (apply o args))
+
+;;     (let ((old-offset ido-vertical--offset)
+;;           old-item)
+
+;;       (ignore-errors
+;;         (setf old-item (nth old-offset ido-matches)))
+
+;;       (apply o args)
+
+;;       (ignore-errors
+;;         (setf ido-vertical--offset
+;;               (or (position old-item ido-matches)
+;;                   0))
+
+;;         )
+
+;;       (unless (< 0 ido-vertical--offset ido-vertical--visible-count)
+;;         (setf ido-vertical--offset 0))
+;;       )))
+
+
+(advice-remove 'ido-set-matches #'ido-vertical--set-matches)
+
+;; (add-hook 'ido-setup-hook
+;;           (lambda ()
+;;             (setf ido-vertical--just-activated t)))
+
 
 (defun ido-vertical-completions (name)
   "Produce text to go in the minibuffer from `ido-matches' and NAME"
@@ -495,6 +529,7 @@ so we can restore it when turning `ido-vertical-mode' off")
                     ido-vertical-columns
                     ))
                   )
+
 
 
              (if (and (stringp ido-common-match-string)
