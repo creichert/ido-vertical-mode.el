@@ -159,68 +159,74 @@ so we can restore it when turning `ido-vertical-mode' off")
 (add-hook 'ido-setup-hook
           (lambda () (setf ido-vertical--offset 0)))
 
-(defun ido-vertical-move (fn)
-  (let* ((current-row (% ido-vertical--offset ido-vertical--visible-rows))
-         (current-col (/ ido-vertical--offset ido-vertical--visible-rows))
-         (posn (funcall fn current-row current-col))
-         (row (car posn))
-         (col (cdr posn)))
+(defun ido-vertical-move (direction)
+  (let* ((nrows ido-vertical--visible-rows)
+         (ncols ido-vertical--visible-cols)
+         (off   ido-vertical--offset)
+
+         (row   (% off nrows))
+         (col   (/ off nrows)))
+
+    (case direction
+      (u (if (zerop row)
+             (setf row (- nrows 1)
+                   col (- col 1))
+           (decf row)))
+      (d (if (= (1+ row) nrows)
+             (setf row 0
+                   col (1+ col))
+           (incf row)))
+      (l (if (zerop col)
+             (setf col (- ncols 1)
+                   row (- row 1))
+           (decf col)))
+      (r (if (= (1+ col) ncols)
+             (setf col 0
+                   row (1+ row))
+           (incf col)
+           )))
+
+    ;; at this point if row or col is oob we need to page up or down
     (setf ido-vertical--offset
-          (+ row
-             (* col ido-vertical--visible-rows)))
+          (+ row (* col nrows)))
 
-    (when (>= ido-vertical--offset
-              ido-vertical--visible-count)
-      (when ido-matches
-        (let ((next (nth ido-vertical--offset ido-matches)))
-          (setq ido-cur-list (ido-chop ido-cur-list next))
-          (setq ido-rescan t)
-          (setq ido-rotate t)))
+    (cond ((or (< row 0) (< col 0))
+           (setf ido-vertical--offset 0)
+           (ido-prev-match))
 
-      (setf ido-vertical--offset 0))
+          ((or (= row nrows) (= col ncols)
+               (>= ido-vertical--offset ido-vertical--visible-count))
 
-    (when (< ido-vertical--offset 0)
-      (setf ido-vertical--offset 0)
-      (ido-prev-match))))
+           (when (and ido-matches
+                      (< ido-vertical--visible-count
+                         (length ido-matches)))
+             (let ((next (nth ido-vertical--offset ido-matches)))
+               (setq ido-cur-list (ido-chop ido-cur-list next)))
+             (setq ido-rescan t)
+             (setq ido-rotate t))
+           (setf ido-vertical--offset 0)
+           ))
+    ))
+
+;; todo hack the complete button to do grid-right when no common prefix
 
 (defun ido-vertical-grid-down ()
   "Put first element of `ido-matches' at the end of the list."
   (interactive)
-  (ido-vertical-move ;; todo make me a macro?
-   (lambda (row col)
-     (let ((newrow (1+ row)))
-       (if (= newrow ido-vertical--visible-rows)
-           (cons 0 (1+ col))
-         (cons newrow col))))))
+  (ido-vertical-move 'd))
 
 (defun ido-vertical-grid-up ()
   "Put last element of `ido-matches' at the front of the list."
   (interactive)
-  (ido-vertical-move
-   (lambda (row col)
-     (let ((newrow (- row 1)))
-       (if (< newrow 0)
-           (cons (- ido-vertical--visible-rows 1) (- col 1))
-         (cons newrow col))))))
+  (ido-vertical-move 'u))
 
 (defun ido-vertical-grid-right ()
   (interactive)
-  (ido-vertical-move
-   (lambda (row col)
-     (let ((newcol (1+ col)))
-       (if (>= newcol ido-vertical--visible-cols)
-           (cons (1+ row) 0)
-         (cons row newcol))))))
+  (ido-vertical-move 'r))
 
 (defun ido-vertical-grid-left ()
   (interactive)
-  (ido-vertical-move
-   (lambda (row col)
-     (let ((newcol (- col 1)))
-       (if (< newcol 0)
-           (cons (- row 1) (- ido-vertical--visible-cols 1))
-         (cons row newcol))))))
-
+  (ido-vertical-move 'l))
 
 (defun ido-vertical--string-with-face (s face)
   "A convenience for taking a string, removing any faces, and then adding a f ace."
@@ -355,8 +361,8 @@ so we can restore it when turning `ido-vertical-mode' off")
 
 (defun ido-vertical--set-first-match-adv (o &rest args)
   (dotimes (n ido-vertical--offset)
-    (ido-next-match))
-  (setf ido-vertical--offset 0)
+    (ido-next-match)) ;; seems inefficient but it works.
+
   (apply o args))
 
 (defun ido-vertical--set-first-match-adv-temp (o &rest args)
