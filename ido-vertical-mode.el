@@ -191,8 +191,24 @@ so we can restore it when turning `ido-vertical-mode' off")
           (+ row (* col nrows)))
 
     (cond ((or (< row 0) (< col 0))
-           (setf ido-vertical--offset 0)
-           (ido-prev-match))
+           ;; TODO here it would be nice to shift up a block
+           ;; that looks like go previous until number displayed < number shifted
+           ;; and then go forward
+           (when (and ido-matches
+                      (< ido-vertical--visible-count
+                         (length ido-matches)))
+             (let ((shift 0))
+               (while (< shift ido-vertical--visible-count)
+                 (ido-prev-match)
+                 (incf shift)
+                 (ido-vertical-completions "") ;; wasteful but reqd.
+                 )
+               (ido-next-match)
+               (ido-vertical-completions "")
+
+               ))
+           (setf ido-vertical--offset (- ido-vertical--visible-count 1)))
+
 
           ((or (= row nrows) (= col ncols)
                (>= ido-vertical--offset ido-vertical--visible-count))
@@ -200,15 +216,13 @@ so we can restore it when turning `ido-vertical-mode' off")
            (when (and ido-matches
                       (< ido-vertical--visible-count
                          (length ido-matches)))
-             (let ((next (nth ido-vertical--offset ido-matches)))
+             (let ((next (nth (- ido-vertical--offset 1) ido-matches)))
                (setq ido-cur-list (ido-chop ido-cur-list next)))
              (setq ido-rescan t)
              (setq ido-rotate t))
            (setf ido-vertical--offset 0)
            ))
     ))
-
-;; todo hack the complete button to do grid-right when no common prefix
 
 (defun ido-vertical-grid-down ()
   "Put first element of `ido-matches' at the end of the list."
@@ -252,7 +266,7 @@ so we can restore it when turning `ido-vertical-mode' off")
   (let ((separator-length (length separator))
         current-column
         columns
-        (column-width 0)
+        column-widths
         (index 0)
         (max-item-length 0))
 
@@ -273,9 +287,11 @@ so we can restore it when turning `ido-vertical-mode' off")
         (push item current-column)
         (setf max-item-length (max max-item-length item-length))
         ;; check whether we fit
-        (let ((new-row-width (+ (* max-item-length (+ 1 (length columns)))
-                                (* separator-length (length columns))
-                                )))
+        ;; this could be sum over this row
+        (let ((new-row-width (+ (apply #'+ column-widths)
+                                max-item-length
+                                (* separator-length (length columns)))
+                             ))
 
           (if (and columns (or (>= (length columns) max-columns)
                                (>= new-row-width width)))
@@ -287,6 +303,8 @@ so we can restore it when turning `ido-vertical-mode' off")
             ;; keep it, and if it's the end then accumulate it
             (when (or (null items) (= item-row (- rows 1)))
               ;; new row
+              (push max-item-length column-widths)
+              (setf max-item-length 0)
               (incf ido-vertical--visible-cols)
               (push (nreverse current-column) columns)
               (setf current-column nil))))
@@ -300,16 +318,14 @@ so we can restore it when turning `ido-vertical-mode' off")
 
       ;; append each column to each row
       (dolist (column columns)
-        (let ((max-width max-item-length)
-                                        ; this next is if you want variable width columns
-                                        ;(apply #'max (mapcar #'length column)))
+        (let ((max-width (nth column-index column-widths)) ; to pack properly
               (row-list row-list))
 
           (dolist (cell column)
             (incf ido-vertical--visible-count)
             (push (if (zerop column-index)
-                       cell
-                       (concat (pad-string cell max-width) separator))
+                      cell
+                    (concat (pad-string cell max-width) separator))
 
                   (car row-list))
             (pop row-list)
@@ -435,7 +451,7 @@ so we can restore it when turning `ido-vertical-mode' off")
                (add-face-text-property 0 1 'ido-indicator nil ind))
            (let* ((decoration-regexp (if ido-enable-regexp ido-text (regexp-quote name)))
                   (available-width (- (window-body-width (minibuffer-window)) 10))
-                  (column-separator "   ")
+                  (column-separator "  |  ")
                   (grid
 
                    (ido-vertical--pack-columns
