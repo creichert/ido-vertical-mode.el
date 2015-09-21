@@ -278,8 +278,7 @@ so we can restore it when turning `ido-vertical-mode' off")
       (let* ((item (funcall decorate index (pop items)))
              (item-length (length item))
              (separator-length (if columns separator-length 0))
-             (item-row (length current-column))
-             )
+             (item-row (length current-column)))
 
         (incf index)
         ;; add the item to the column
@@ -360,32 +359,44 @@ so we can restore it when turning `ido-vertical-mode' off")
 
 (defun ido-vertical--fewer-rows (candidates ncandidates available-width separator-width)
   "try and use fewer rows"
+  ;; todo - we could just try rows from 1 to n until it works?
   (if (or ido-vertical-pad-list
           (>= ncandidates
               (* ido-vertical-rows ido-vertical-columns)))
             ido-vertical-rows
     ;; if we are not padding and we won't overflow, then layout the other way around
-    (let* ((maxwidth
-            (apply #'max (mapcar (lambda (x) (length (ido-name x))) candidates)))
-           (columns
-            (/ (- available-width separator-width) (+ maxwidth separator-width))))
-      (if (= columns 0)
-          ido-vertical-rows
-        (max 1 (min ido-vertical-rows
-                    (/ (+ ncandidates columns -1)
-                       columns)))))))
+    (let ((candidate-widths (mapcar (lambda (x) (length (ido-name x))) candidates)))
+      (or
+       (catch 'break
+         (dotimes (rows ido-vertical-rows)
+           (let* ((rc (1+ rows))
+                  (rowlengths (make-list rc 0))
+                  (rowlengths1 rowlengths))
+             (dolist (w candidate-widths)
+               (if (zerop (car rowlengths1))
+                   (setf (car rowlengths1) w)
+                 (incf (car rowlengths1) (+ w separator-width)))
+               (if (< (car rowlengths1) available-width)
+                   (throw 'break rc))
+
+               (setf rowlengths1 (or (cdr rowlengths1) rowlengths)) ;; rotate
+               )
+             )
+           ))
+       ido-vertical-rows))
+    ))
 
 (defun ido-vertical--set-first-match-adv (o &rest args)
   (dotimes (n ido-vertical--offset)
     (ido-next-match)) ;; seems inefficient but it works.
-
+  (setf ido-vertical--offset 0)
   (apply o args))
 
 (defun ido-vertical--set-first-match-adv-temp (o &rest args)
   (let ((ido-matches (nthcdr ido-vertical--offset ido-matches)))
        (apply o args)))
 
-(advice-add 'ido-exit-minibuffer :around #'ido-vertical--set-first-match-adv)
+(advice-add 'ido-exit-minibuffer     :around #'ido-vertical--set-first-match-adv)
 (advice-add 'ido-kill-buffer-at-head :around #'ido-vertical--set-first-match-adv-temp)
 (advice-add 'ido-delete-file-at-head :around #'ido-vertical--set-first-match-adv-temp)
 
