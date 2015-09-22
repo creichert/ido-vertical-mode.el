@@ -369,21 +369,19 @@ so we can restore it when turning `ido-vertical-mode' off")
       (or
        (catch 'break
          (dotimes (rows ido-vertical-rows)
-           (let* ((rc (1+ rows))
+           (let* ((rc (- ido-vertical-rows rows))
                   (rowlengths (make-list rc 0))
                   (rowlengths1 rowlengths))
              (dolist (w candidate-widths)
                (if (zerop (car rowlengths1))
                    (setf (car rowlengths1) w)
                  (incf (car rowlengths1) (+ w separator-width)))
-               (if (< (car rowlengths1) available-width)
-                   (throw 'break rc))
+               (if (>= (car rowlengths1) available-width)
+                   (throw 'break (1+ rc)))
 
                (setf rowlengths1 (or (cdr rowlengths1) rowlengths)) ;; rotate
-               )
-             )
-           ))
-       ido-vertical-rows))
+               ))))
+       1))
     ))
 
 (defun ido-vertical--set-first-match-adv (o &rest args)
