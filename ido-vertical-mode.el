@@ -460,7 +460,7 @@ so we can restore it when turning `ido-vertical-mode' off")
                (add-face-text-property 0 1 'ido-indicator nil ind))
            (let* ((decoration-regexp (if ido-enable-regexp ido-text (regexp-quote name)))
                   (available-width (- (window-body-width (minibuffer-window)) 10))
-                  (column-separator "  |  ")
+                  (column-separator "  ")
                   (grid
 
                    (ido-vertical--pack-columns
