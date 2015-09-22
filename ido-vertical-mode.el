@@ -112,11 +112,6 @@ so we can restore it when turning `ido-vertical-mode' off")
   :type 'integer
   :group 'ido-vertical-mode)
 
-(defcustom ido-vertical-disable-if-short nil
-  "Non nil means that ido will go back to horizontal mode if the candidates all fit in the minibuffer area"
-  :type 'boolean
-  :group 'ido-vertical-mode)
-
 (defface ido-vertical-first-match-face
   '((t (:inherit ido-first-match)))
   "Face used by Ido Vertical for highlighting first match."
@@ -132,20 +127,20 @@ so we can restore it when turning `ido-vertical-mode' off")
   "Face used by Ido Vertical for the matched part."
   :group 'ido-vertical-mode)
 
-(defun ido-vertical-or-horizontal-completions (name)
-  (if (and ido-vertical-disable-if-short
-           (<= (length ido-matches) ido-max-prospects))
+;; (defun ido-vertical-or-horizontal-completions (name)
+;;   (if (and ido-vertical-disable-if-short
+;;            (<= (length ido-matches) ido-max-prospects))
 
-      (let ((short-result
-             (let ((ido-decorations ido-vertical-old-decorations))
-               (funcall ido-vertical-old-completions name))))
-        (if (>= (window-body-width (minibuffer-window))
-                (+ (minibuffer-prompt-width)
-                   (length short-result)))
-            short-result
-          (ido-vertical-completions name)))
+;;       (let ((short-result
+;;              (let ((ido-decorations ido-vertical-old-decorations))
+;;                (funcall ido-vertical-old-completions name))))
+;;         (if (>= (window-body-width (minibuffer-window))
+;;                 (+ (minibuffer-prompt-width)
+;;                    (length short-result)))
+;;             short-result
+;;           (ido-vertical-completions name)))
 
-    (ido-vertical-completions name)))
+;;     (ido-vertical-completions name)))
 
 (defvar ido-vertical--visible-count 0
   "how many items got drawn - modified by using ido-vertical--pack-columns")
@@ -544,7 +539,7 @@ so we can restore it when turning `ido-vertical-mode' off")
         (setq ido-vertical-old-completions (symbol-function 'ido-completions))))
 
   (setq ido-decorations ido-vertical-decorations)
-  (fset 'ido-completions 'ido-vertical-or-horizontal-completions)
+  (fset 'ido-completions 'ido-vertical-completions)
 
   (add-hook 'ido-minibuffer-setup-hook 'ido-vertical-disable-line-truncation)
   (add-hook 'ido-setup-hook 'ido-vertical-define-keys)
