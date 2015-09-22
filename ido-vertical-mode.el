@@ -93,7 +93,8 @@ so we can restore it when turning `ido-vertical-mode' off")
           (const :tag "Keep default ido keys." nil)
           (const :tag "C-p and C-n are up & down in match" C-n-and-C-p-only)
           (const :tag "C-p/up and C-n/down are up and down in match." C-n-C-p-up-and-down)
-          (const :tag "C-p/up, C-n/down are up/down in match. left or right cycle history or directory." C-n-C-p-up-down-left-right))
+          (const :tag "C-p/up, C-n/down are up/down in match. left or right cycle history or directory." C-n-C-p-up-down-left-right)
+          (const :tag "Left, right, up and down move around in the grid" grid-movement))
   :group 'ido-vertical-mode)
 
 (defcustom ido-vertical-pad-list t
@@ -101,9 +102,14 @@ so we can restore it when turning `ido-vertical-mode' off")
   :type 'boolean
   :group 'ido-vertical-mode)
 
-(defcustom ido-vertical-disable-if-short nil
-  "Non nil means that ido will go back to horizontal mode if the candidates all fit in the minibuffer area"
-  :type 'boolean
+(defcustom ido-vertical-columns 1
+  "Display up to this many columns of suggestions"
+  :type 'integer
+  :group 'ido-vertical-mode)
+
+(defcustom ido-vertical-rows 8
+  "Display this many rows of suggestions"
+  :type 'integer
   :group 'ido-vertical-mode)
 
 (defface ido-vertical-first-match-face
@@ -121,160 +127,405 @@ so we can restore it when turning `ido-vertical-mode' off")
   "Face used by Ido Vertical for the matched part."
   :group 'ido-vertical-mode)
 
-(defun ido-vertical-or-horizontal-completions (name)
-  (if (and ido-vertical-disable-if-short
-           (<= (length ido-matches) ido-max-prospects))
+;; (defun ido-vertical-or-horizontal-completions (name)
+;;   (if (and ido-vertical-disable-if-short
+;;            (<= (length ido-matches) ido-max-prospects))
 
-      (let ((short-result
-             (let ((ido-decorations ido-vertical-old-decorations))
-               (funcall ido-vertical-old-completions name))))
-        (if (>= (window-body-width (minibuffer-window))
-                (+ (minibuffer-prompt-width)
-                   (length short-result)))
-            short-result
-          (ido-vertical-completions name)))
+;;       (let ((short-result
+;;              (let ((ido-decorations ido-vertical-old-decorations))
+;;                (funcall ido-vertical-old-completions name))))
+;;         (if (>= (window-body-width (minibuffer-window))
+;;                 (+ (minibuffer-prompt-width)
+;;                    (length short-result)))
+;;             short-result
+;;           (ido-vertical-completions name)))
 
-    (ido-vertical-completions name)))
+;;     (ido-vertical-completions name)))
 
-;; borrowed from ido.el and modified to work better when vertical
+(defvar ido-vertical--visible-count 0
+  "how many items got drawn - modified by using ido-vertical--pack-columns")
+
+(defvar ido-vertical--visible-rows 0)
+(defvar ido-vertical--visible-cols 0)
+
+(defvar ido-vertical--offset 0
+  "offset into the drawn items")
+
+(defun ido-vertical--reset-offset ()
+  (interactive)
+  (setf ido-vertical--offset 0))
+
+(defun ido-vertical-move (direction)
+  (let* ((nrows ido-vertical--visible-rows)
+         (ncols ido-vertical--visible-cols)
+         (off   ido-vertical--offset)
+
+         (row   (% off nrows))
+         (col   (/ off nrows)))
+
+    (case direction
+      (u (if (zerop row)
+             (setf row (- nrows 1)
+                   col (- col 1))
+           (decf row)))
+      (d (if (= (1+ row) nrows)
+             (setf row 0
+                   col (1+ col))
+           (incf row)))
+      (l (if (zerop col)
+             (setf col (- ncols 1)
+                   row (- row 1))
+           (decf col)))
+      (r (if (= (1+ col) ncols)
+             (setf col 0
+                   row (1+ row))
+           (incf col)
+           )))
+
+    ;; at this point if row or col is oob we need to page up or down
+    (setf ido-vertical--offset
+          (+ row (* col nrows)))
+
+    (cond ((or (< row 0) (< col 0))
+           ;; TODO here it would be nice to shift up a block
+           ;; that looks like go previous until number displayed < number shifted
+           ;; and then go forward
+           (when (and ido-matches
+                      (< ido-vertical--visible-count
+                         (length ido-matches)))
+             (let ((shift 0))
+               (while (< shift ido-vertical--visible-count)
+                 (ido-prev-match)
+                 (incf shift)
+                 (ido-vertical-completions "") ;; wasteful but reqd.
+                 )
+               (ido-next-match)
+               (ido-vertical-completions "")
+
+               ))
+           (setf ido-vertical--offset (- ido-vertical--visible-count 1)))
+
+
+          ((or (= row nrows) (= col ncols)
+               (>= ido-vertical--offset ido-vertical--visible-count))
+
+           (when (and ido-matches
+                      (< ido-vertical--visible-count
+                         (length ido-matches)))
+             (let ((next (nth (- ido-vertical--offset 1) ido-matches)))
+               (setq ido-cur-list (ido-chop ido-cur-list next)))
+             (setq ido-rescan t)
+             (setq ido-rotate t))
+           (ido-vertical--reset-offset)
+           ))
+    ))
+
+(defun ido-vertical-grid-down ()
+  "Put first element of `ido-matches' at the end of the list."
+  (interactive)
+  (ido-vertical-move 'd))
+
+(defun ido-vertical-grid-up ()
+  "Put last element of `ido-matches' at the front of the list."
+  (interactive)
+  (ido-vertical-move 'u))
+
+(defun ido-vertical-grid-right ()
+  (interactive)
+  (ido-vertical-move 'r))
+
+(defun ido-vertical-grid-left ()
+  (interactive)
+  (ido-vertical-move 'l))
+
+(defun ido-vertical--string-with-face (s face)
+  "A convenience for taking a string, removing any faces, and then adding a f ace."
+  (let ((s (substring-no-properties s 0)))
+    (when ido-use-faces
+        (add-face-text-property 0 (length s) face nil s))
+    s))
+
+(defun ido-vertical--pack-columns (items     ;; things to pack
+                                   prefix0   ;; prefix of first line
+                                   prefix    ;; prefix of other lines
+                                   separator ;; separator between columns
+                                   ellipsis  ;; ellipsis string to show
+                                   width     ;; max width of a column
+
+                                   rows      ;; max number of rows
+                                   decorate  ;; function used to fontify etc. items
+
+                                   pad-rows  ;; if not-nil pad to number of rows
+                                   max-columns ;; max column count
+                                   )
+  (let ((separator-length (length separator))
+        current-column
+        columns
+        column-widths
+        (index 0)
+        (max-item-length 0))
+
+    (setf ido-vertical--visible-count 0
+          ido-vertical--visible-rows rows
+          ido-vertical--visible-cols 0)
+
+    (while items
+      (let* ((item (funcall decorate index (pop items)))
+             (item-length (length item))
+             (separator-length (if columns separator-length 0))
+             (item-row (length current-column)))
+
+        (incf index)
+        ;; add the item to the column
+
+        (push item current-column)
+        (setf max-item-length (max max-item-length item-length))
+        ;; check whether we fit
+        ;; this could be sum over this row
+        (let ((new-row-width (+ (apply #'+ column-widths)
+                                max-item-length
+                                (* separator-length (length columns)))
+                             ))
+
+          (if (and columns (or (>= (length columns) max-columns)
+                               (>= new-row-width width)))
+              ;; discard this part of solution and end while loop
+              (progn (setf items nil)
+                     (setf (nth (- rows 1) (car columns)) ellipsis)
+                     (decf ido-vertical--visible-count))
+
+            ;; keep it, and if it's the end then accumulate it
+            (when (or (null items) (= item-row (- rows 1)))
+              ;; new row
+              (push max-item-length column-widths)
+              (setf max-item-length 0)
+              (incf ido-vertical--visible-cols)
+              (push (nreverse current-column) columns)
+              (setf current-column nil))))
+        ))
+
+    ;; at this point columns contains the columns, so we can produce the rows accordingly.
+    ;(message (format "%s %d" min-row-widths width))
+    (let* ((row-list (make-list rows nil))
+           (column-index 0)
+           (column-count (length columns)))
+
+      ;; append each column to each row
+      (dolist (column columns)
+        (let ((max-width (nth column-index column-widths)) ; to pack properly
+              (row-list row-list))
+
+          (dolist (cell column)
+            (incf ido-vertical--visible-count)
+            (push (if (zerop column-index)
+                      cell
+                    (concat (pad-string cell max-width) separator))
+
+                  (car row-list))
+            (pop row-list)
+            )
+          (incf column-index)
+          ))
+
+      (if pad-rows
+          (dotimes (row rows)
+            (when (null (nth row row-list))
+                        (setf (nth row row-list)
+                              (list ""))))
+
+        (setq row-list (delete nil row-list)))
+
+
+
+      (dolist (row row-list)
+        (setcdr row (cons (car row) (cdr row)))
+        (setcar row prefix0)
+        (setf prefix0 prefix))
+
+      (mapconcat (lambda (x) (apply #'concat x))
+                 row-list
+                 "\n")
+      )))
+
+(defun pad-string (string width)
+  (concat
+   string
+   (make-list (- width (length string)) 32)))
+
+(defun ido-vertical--fewer-rows (candidates ncandidates available-width separator-width)
+  "try and use fewer rows"
+  ;; todo - we could just try rows from 1 to n until it works?
+  (if (or ido-vertical-pad-list
+          (>= ncandidates
+              (* ido-vertical-rows ido-vertical-columns)))
+            ido-vertical-rows
+    ;; if we are not padding and we won't overflow, then layout the other way around
+    (let ((candidate-widths (mapcar (lambda (x) (length (ido-name x))) candidates)))
+      (min ido-vertical-rows
+           (or
+            (catch 'break
+              (dotimes (rows ido-vertical-rows)
+                (let* ((rc (- ido-vertical-rows rows))
+                       (rowlengths (make-list rc 0))
+                       (rowlengths1 rowlengths))
+                  (dolist (w candidate-widths)
+                    (if (zerop (car rowlengths1))
+                        (setf (car rowlengths1) w)
+                      (incf (car rowlengths1) (+ w separator-width)))
+                    (if (>= (car rowlengths1) available-width)
+                        (throw 'break (1+ rc)))
+
+                    (setf rowlengths1 (or (cdr rowlengths1) rowlengths)) ;; rotate
+                    ))))
+            1)))
+    ))
+
+(defun ido-vertical--set-first-match-adv (o &rest args)
+  (dotimes (n ido-vertical--offset)
+    (ido-next-match)) ;; seems inefficient but it works.
+  (ido-vertical--reset-offset)
+  (apply o args))
+
+(defun ido-vertical--set-first-match-adv-temp (o &rest args)
+  (let ((ido-matches (nthcdr ido-vertical--offset ido-matches)))
+       (apply o args)))
+
 (defun ido-vertical-completions (name)
-  ;; Return the string that is displayed after the user's text.
-  ;; Modified from `icomplete-completions'.
+  "Produce text to go in the minibuffer from `ido-matches' and NAME"
+  (let* ((candidates ido-matches)
+         (ncandidates (length ido-matches))
 
-  (let* ((comps ido-matches)
-         (ind (and (consp (car comps)) (> (length (cdr (car comps))) 1)
+         (ind (and (consp (car candidates))
+                   (> (length (cdr (car candidates))) 1)
                    ido-merged-indicator))
-         (lencomps (length comps))
-         (additional-items-indicator (nth 3 ido-decorations))
-         (comps-empty (null comps))
-         (ncomps lencomps)
-         first)
 
-    ;; Keep the height of the suggestions list constant by padding
-    ;; when lencomps is too small. Also, if lencomps is too short, we
-    ;; should not indicate that there are additional prospects.
-    (when (< lencomps (1+ ido-max-prospects))
-      (setq additional-items-indicator "\n")
-      (when ido-vertical-pad-list
-        (setq comps (append comps (make-list (- (1+ ido-max-prospects) lencomps) "")))
-        (setq ncomps (length comps))))
+         (deco-arrow-and-count (if ido-vertical-show-count
+                                   (concat (format " [%d]" ncandidates)
+                                           (nth 0 ido-decorations))
+                                 (nth 0 ido-decorations)))
 
-    (if (not ido-incomplete-regexp)
-        (when ido-use-faces
-          ;; Make a copy of [ido-matches], otherwise the selected string
-          ;; could contain text properties which could lead to weird
-          ;; artifacts, e.g. buffer-file-name having text properties.
-          (when (eq comps ido-matches)
-            (setq comps (copy-sequence ido-matches)))
+         (deco-between-prospect (nth 2 ido-decorations))
+         (deco-more-candidates (nth 3 ido-decorations))
 
-          (dotimes (i ncomps)
-            (let ((comps-i (nth i comps)))
-              (setf comps-i
-                    (setf (nth i comps) (substring (if (listp comps-i)
-                                                       (car comps-i)
-                                                     comps-i)
-                                                   0)))
+         (deco-lb-prefix (nth 4 ido-decorations))
+         (deco-rb-prefix (nth 5 ido-decorations))
+         (deco-no-match-message (nth 6 ido-decorations))
+         (deco-exact-match-message (nth 7 ido-decorations))
+         (deco-not-readable-message (nth 8 ido-decorations))
+         (deco-too-big-message  (nth 9 ido-decorations) )
+         (deco-confirm-message (nth 10 ido-decorations))
+         (deco-lb-match (nth 11 ido-decorations))
+         (deco-rb-match (nth 12 ido-decorations))
+         )
 
-              (when (string-match (if ido-enable-regexp name (regexp-quote name)) comps-i)
-                (ignore-errors
-                  (add-face-text-property (match-beginning 0)
-                                          (match-end 0)
-                                          'ido-vertical-match-face
-                                          nil comps-i)))))))
-
-    (if (and ind ido-use-faces)
-        (put-text-property 0 1 'face 'ido-indicator ind))
-
-    (when ido-vertical-show-count
-      (setcar ido-vertical-decorations (format " [%d]\n-> " lencomps))
-      (setq ido-vertical-count-active t))
-    (when (and (not ido-vertical-show-count)
-               ido-vertical-count-active)
-      (setcar ido-vertical-decorations "\n-> ")
-      (setq ido-vertical-count-active nil))
-
-    (if (and ido-use-faces comps)
-        (let* ((fn (ido-name (car comps)))
-               (ln (length fn)))
-          (setq first (format "%s" fn))
-          (if (fboundp 'add-face-text-property)
-              (add-face-text-property 0 (length first)
-                                      (cond ((> lencomps 1)
-                                             'ido-vertical-first-match-face)
-
-                                            (ido-incomplete-regexp
-                                             'ido-incomplete-regexp)
-
-                                            (t
-                                             'ido-vertical-only-match-face))
-                                      nil first)
-            (put-text-property 0 ln 'face
-                               (if (= lencomps 1)
-                                   (if ido-incomplete-regexp
-                                       'ido-incomplete-regexp
-                                     'ido-vertical-only-match-face)
-                                 'ido-vertical-first-match-face)
-                               first))
-          (if ind (setq first (concat first ind)))
-          (setq comps (cons first (cdr comps)))))
-
-    ;; Previously we'd check null comps to see if the list was
-    ;; empty. We pad the list with empty items to keep the list at a
-    ;; constant height, so we have to check if the entire list is
-    ;; empty, instead of (null comps)
-    (cond (comps-empty
+    (cond ((zerop ncandidates)          ; no candidates: we just show an informative string
            (cond
             (ido-show-confirm-message
-             (or (nth 10 ido-decorations) " [Confirm]"))
+             (or deco-confirm-message " [Confirm]"))
             (ido-directory-nonreadable
-             (or (nth 8 ido-decorations) " [Not readable]"))
+             (or deco-not-readable-message  " [Not readable]"))
             (ido-directory-too-big
-             (or (nth 9 ido-decorations) " [Too big]"))
+             (or deco-too-big-message " [Too big]"))
             (ido-report-no-match
-             (nth 6 ido-decorations)) ;; [No match]
+             deco-no-match-message) ;; [No match]
             (t "")))
-          (ido-incomplete-regexp
-           (concat " " (car comps)))
-          ((null (cdr comps))                       ;one match
-           (concat (concat (nth 11 ido-decorations) ;; [ ... ]
-                           (ido-name (car comps))
-                           (nth 12 ido-decorations))
-                   (if (not ido-use-faces) (nth 7 ido-decorations)))) ;; [Matched]
-          (t                            ;multiple matches
-           (let* ((items (if (> ido-max-prospects 0) (1+ ido-max-prospects) 999))
-                  (alternatives
-                   (apply
-                    #'concat
-                    (cdr (apply
-                          #'nconc
-                          (mapcar
-                           (lambda (com)
-                             (setq com (ido-name com))
-                             (setq items (1- items))
-                             (cond
-                              ((< items 0) ())
-                              ((= items 0) (list additional-items-indicator)) ; " | ..."
-                              (t
-                               (list (nth 2 ido-decorations) ; " | "
-                                     (let ((str (substring com 0)))
-                                       (if (and ido-use-faces
-                                                (not (string= str first))
-                                                (ido-final-slash str))
-                                           (put-text-property 0 (length str) 'face 'ido-subdir str))
-                                       str)))))
-                           comps))))))
 
-             (concat
-              ;; put in common completion item -- what you get by pressing tab
-              (if (and (stringp ido-common-match-string)
-                       (> (length ido-common-match-string) (length name)))
-                  (concat (nth 4 ido-decorations) ;; [ ... ]
-                          (substring ido-common-match-string (length name))
-                          (nth 5 ido-decorations)))
-              ;; list all alternatives
-              (nth 0 ido-decorations) ;; { ... }
-              alternatives
-              (nth 1 ido-decorations)))))))
+          (ido-incomplete-regexp        ; incomplete regex - wait until it's finished
+           (concat " "
+                   (ido-vertical--string-with-face
+                    (ido-name (car candidates))
+                    'ido-incomplete-regexp)))
+
+          ((= 1 ncandidates)            ; exactly 1 candidate - just show that as the match
+           (concat
+            deco-lb-match
+
+            (ido-vertical--string-with-face
+             (ido-name (car candidates))
+             'ido-vertical-only-match-face)
+
+            deco-rb-match
+            (unless ido-use-faces deco-exact-match-message)))
+
+          (t                            ; more than 1 candidate, so we need to make something up
+           (if (and ind ido-use-faces)
+               (add-face-text-property 0 1 'ido-indicator nil ind))
+           (let* ((decoration-regexp (if ido-enable-regexp ido-text (regexp-quote name)))
+                  (available-width (- (window-body-width (minibuffer-window)) 10))
+                  (column-separator "  ")
+                  (grid
+
+                   (ido-vertical--pack-columns
+                    candidates
+                    deco-arrow-and-count
+                    "   "
+                    column-separator
+                    "..."
+
+                    available-width
+                    (ido-vertical--fewer-rows candidates ncandidates available-width (length column-separator))
+
+                    (lambda (index item)
+                      (let ((prospect-name (substring-no-properties (ido-name item) 0)))
+                        (when (and ind (= ido-vertical--offset index))
+                          (setf prospect-name (concat prospect-name ind)))
+
+                        (when ido-use-faces
+                          ;; anything not the first item, with a /, gets ido-subdir face
+                          (unless (= ido-vertical--offset index)
+                            (if (ido-final-slash prospect-name)
+                                (add-face-text-property
+                                 0 (length prospect-name)
+                                 'ido-subdir
+                                 nil prospect-name)))
+
+                          ;; first item gets a special face
+                          (when (= ido-vertical--offset index)
+                            (add-face-text-property
+                             0 (length prospect-name)
+                             (cond
+                              ((> ncandidates 1) 'ido-vertical-first-match-face)
+                              (ido-incomplete-regexp 'ido-incomplete-regexp)
+                              (t 'ido-vertical-only-match-face))
+                             nil prospect-name))
+
+                          ;; other stuff gets a bit of highlighting
+                          (when (string-match decoration-regexp prospect-name)
+                            (ignore-errors
+                              ;; try and match each group in case it's a regex with groups
+                              (let ((group 1))
+                                (while (match-beginning group)
+                                  (add-face-text-property (match-beginning group)
+                                                          (match-end group)
+                                                          'ido-vertical-match-face
+                                                          nil prospect-name)
+                                  (incf group))
+                                ;; it's not a regex with groups, so just mark the whole match region.
+                                (when (= 1 group)
+                                  (add-face-text-property (match-beginning 0)
+                                                          (match-end 0)
+                                                          'ido-vertical-match-face
+                                                          nil prospect-name)
+                                  )))))
+                        prospect-name))
+
+                    ido-vertical-pad-list
+                    ido-vertical-columns
+                    ))
+                  )
+
+
+
+             (if (and (stringp ido-common-match-string)
+                        (> (length ido-common-match-string) (length name)))
+               (concat
+                deco-lb-prefix
+                (substring ido-common-match-string (length name))
+                deco-rb-prefix
+                grid)
+               grid)
+             )
+           ))))
 
 (defun ido-vertical-disable-line-truncation ()
   "Prevent the newlines in the minibuffer from being truncated"
@@ -288,17 +539,27 @@ so we can restore it when turning `ido-vertical-mode' off")
         (setq ido-vertical-old-completions (symbol-function 'ido-completions))))
 
   (setq ido-decorations ido-vertical-decorations)
-  (fset 'ido-completions 'ido-vertical-or-horizontal-completions)
+  (fset 'ido-completions 'ido-vertical-completions)
 
   (add-hook 'ido-minibuffer-setup-hook 'ido-vertical-disable-line-truncation)
-  (add-hook 'ido-setup-hook 'ido-vertical-define-keys))
+  (add-hook 'ido-setup-hook 'ido-vertical-define-keys)
+
+  (advice-add 'ido-exit-minibuffer     :around #'ido-vertical--set-first-match-adv)
+  (advice-add 'ido-kill-buffer-at-head :around #'ido-vertical--set-first-match-adv-temp)
+  (advice-add 'ido-delete-file-at-head :around #'ido-vertical--set-first-match-adv-temp)
+
+  (add-hook 'ido-setup-hook 'ido-vertical--reset-offset))
 
 (defun turn-off-ido-vertical ()
   (setq ido-decorations ido-vertical-old-decorations)
   (fset 'ido-completions ido-vertical-old-completions)
 
   (remove-hook 'ido-minibuffer-setup-hook 'ido-vertical-disable-line-truncation)
-  (remove-hook 'ido-setup-hook 'ido-vertical-define-keys))
+  (remove-hook 'ido-setup-hook 'ido-vertical--reset-offset)
+
+  (advice-remove 'ido-exit-minibuffer     #'ido-vertical--set-first-match-adv)
+  (advice-remove 'ido-kill-buffer-at-head #'ido-vertical--set-first-match-adv-temp)
+  (advice-remove 'ido-delete-file-at-head #'ido-vertical--set-first-match-adv-temp))
 
 (defun ido-vertical-next-match ()
   "Call the correct next-match function for right key.
@@ -336,7 +597,12 @@ This is based on:
     (define-key ido-completion-map (kbd "<down>") 'ido-next-match))
   (when (eq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
     (define-key ido-completion-map (kbd "<left>") 'ido-vertical-prev-match)
-    (define-key ido-completion-map (kbd "<right>") 'ido-vertical-next-match)))
+    (define-key ido-completion-map (kbd "<right>") 'ido-vertical-next-match))
+  (when (eq ido-vertical-define-keys 'grid-movement)
+    (define-key ido-completion-map (kbd "<up>") 'ido-vertical-grid-up)
+    (define-key ido-completion-map (kbd "<down>") 'ido-vertical-grid-down)
+    (define-key ido-completion-map (kbd "<left>") 'ido-vertical-grid-left)
+    (define-key ido-completion-map (kbd "<right>") 'ido-vertical-grid-right)))
 
 ;;;###autoload
 (define-minor-mode ido-vertical-mode

@@ -9,6 +9,27 @@
 ;;; otherwise throw void error
 (execute-kbd-macro [24 98 return] 1)
 
+(ert-deftest ivm-should-pad-when-padding ()
+  (let* ((ido-matches '("a" "b"))
+         (ido-vertical-columns 1)
+         (ido-vertical-rows 6)
+         (ido-vertical-pad-list t)
+         (prospect-string (ido-vertical-completions "")))
+
+    (should (= (length (split-string prospect-string "\n"))
+               7)))
+               )
+
+(ert-deftest ivm-should-not-pad-when-not-padding ()
+  (let* ((ido-matches '("a" "b"))
+         (ido-vertical-rows 4)
+         (ido-vertical-columns 1)
+         (ido-vertical-pad-list nil)
+         (prospect-string (ido-vertical-completions "")))
+
+    (should (= (length (split-string prospect-string "\n"))
+               3))))
+
 (ert-deftest ivm-should-install-decorations ()
   (ido-vertical-mode 1)
   (let ((prospects (ido-completions "")))
@@ -58,6 +79,7 @@
 
 (ert-deftest ivm-should-highlight-matched-candidates ()
   (let* ((ido-use-faces t)
+         (ido-vertical-columns 1)
          (ido-matches '("ido" "ido-vertical"))
          (ido-query (ido-vertical-completions "ido"))
          (first-comp-pos (string-match "ido" ido-query))
@@ -76,7 +98,8 @@
          (ido-query (ido-vertical-completions "ido"))
          (first-comp-pos (string-match "ido" ido-query))
          (ido-query-first-comp-face (get-text-property first-comp-pos 'face ido-query))
-         (debug nil))
+         (debug nil)
+         )
     (when debug (prin1 ido-query))
     (should (eq nil ido-query-first-comp-face))))
 
@@ -113,9 +136,9 @@
     (setq query (ido-vertical-completions ""))
     (should (string= " [5]\n" (substring query 0 5)))
     ;; Count should update when filtering completions
-    (setq ido-matches '("1"))
+    (setq ido-matches '("1" "2"))
     (setq query (ido-vertical-completions "1"))
-    (should (string= " [1]" (substring query 0 4)))))
+    (should (string= " [2]" (substring query 0 4)))))
 
 (ert-deftest ivm-should-turn-off-count ()
   (let* ((ido-matches '("1"))
@@ -133,5 +156,9 @@
 ;;
 (ert-deftest ivm-should-allow-regexp ()
   (ido-vertical-mode 1)
-  (let ((query (ido-vertical-completions "scratch")))
-    (should (string= "\n-> *Messages*\n" (substring-no-properties query 0 15)))))
+  (let* ((ido-vertical-show-count nil)
+         (ido-vertical-columns 1)
+         (ido-vertical-rows 8)
+         (ido-matches '("*scratch*" "*scratch*"))
+         (query (ido-vertical-completions "scratch")))
+    (should (string= "\n-> *scratch*\n" (substring-no-properties query 0 14)))))
