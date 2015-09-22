@@ -156,8 +156,9 @@ so we can restore it when turning `ido-vertical-mode' off")
 (defvar ido-vertical--offset 0
   "offset into the drawn items")
 
-(add-hook 'ido-setup-hook
-          (lambda () (setf ido-vertical--offset 0)))
+(defun ido-vertical--reset-offset ()
+  (interactive)
+  (setf ido-vertical--offset 0))
 
 (defun ido-vertical-move (direction)
   (let* ((nrows ido-vertical--visible-rows)
@@ -220,7 +221,7 @@ so we can restore it when turning `ido-vertical-mode' off")
                (setq ido-cur-list (ido-chop ido-cur-list next)))
              (setq ido-rescan t)
              (setq ido-rotate t))
-           (setf ido-vertical--offset 0)
+           (ido-vertical--reset-offset)
            ))
     ))
 
@@ -249,14 +250,13 @@ so we can restore it when turning `ido-vertical-mode' off")
         (add-face-text-property 0 (length s) face nil s))
     s))
 
-;; TODO rotate grid. not sure how ido really works so this is hard to get right.
-
 (defun ido-vertical--pack-columns (items     ;; things to pack
                                    prefix0   ;; prefix of first line
                                    prefix    ;; prefix of other lines
                                    separator ;; separator between columns
                                    ellipsis  ;; ellipsis string to show
                                    width     ;; max width of a column
+
                                    rows      ;; max number of rows
                                    decorate  ;; function used to fontify etc. items
 
@@ -366,37 +366,34 @@ so we can restore it when turning `ido-vertical-mode' off")
             ido-vertical-rows
     ;; if we are not padding and we won't overflow, then layout the other way around
     (let ((candidate-widths (mapcar (lambda (x) (length (ido-name x))) candidates)))
-      (or
-       (catch 'break
-         (dotimes (rows ido-vertical-rows)
-           (let* ((rc (- ido-vertical-rows rows))
-                  (rowlengths (make-list rc 0))
-                  (rowlengths1 rowlengths))
-             (dolist (w candidate-widths)
-               (if (zerop (car rowlengths1))
-                   (setf (car rowlengths1) w)
-                 (incf (car rowlengths1) (+ w separator-width)))
-               (if (>= (car rowlengths1) available-width)
-                   (throw 'break (1+ rc)))
+      (min ido-vertical-rows
+           (or
+            (catch 'break
+              (dotimes (rows ido-vertical-rows)
+                (let* ((rc (- ido-vertical-rows rows))
+                       (rowlengths (make-list rc 0))
+                       (rowlengths1 rowlengths))
+                  (dolist (w candidate-widths)
+                    (if (zerop (car rowlengths1))
+                        (setf (car rowlengths1) w)
+                      (incf (car rowlengths1) (+ w separator-width)))
+                    (if (>= (car rowlengths1) available-width)
+                        (throw 'break (1+ rc)))
 
-               (setf rowlengths1 (or (cdr rowlengths1) rowlengths)) ;; rotate
-               ))))
-       1))
+                    (setf rowlengths1 (or (cdr rowlengths1) rowlengths)) ;; rotate
+                    ))))
+            1)))
     ))
 
 (defun ido-vertical--set-first-match-adv (o &rest args)
   (dotimes (n ido-vertical--offset)
     (ido-next-match)) ;; seems inefficient but it works.
-  (setf ido-vertical--offset 0)
+  (ido-vertical--reset-offset)
   (apply o args))
 
 (defun ido-vertical--set-first-match-adv-temp (o &rest args)
   (let ((ido-matches (nthcdr ido-vertical--offset ido-matches)))
        (apply o args)))
-
-(advice-add 'ido-exit-minibuffer     :around #'ido-vertical--set-first-match-adv)
-(advice-add 'ido-kill-buffer-at-head :around #'ido-vertical--set-first-match-adv-temp)
-(advice-add 'ido-delete-file-at-head :around #'ido-vertical--set-first-match-adv-temp)
 
 (defun ido-vertical-completions (name)
   "Produce text to go in the minibuffer from `ido-matches' and NAME"
@@ -550,14 +547,24 @@ so we can restore it when turning `ido-vertical-mode' off")
   (fset 'ido-completions 'ido-vertical-or-horizontal-completions)
 
   (add-hook 'ido-minibuffer-setup-hook 'ido-vertical-disable-line-truncation)
-  (add-hook 'ido-setup-hook 'ido-vertical-define-keys))
+  (add-hook 'ido-setup-hook 'ido-vertical-define-keys)
+
+  (advice-add 'ido-exit-minibuffer     :around #'ido-vertical--set-first-match-adv)
+  (advice-add 'ido-kill-buffer-at-head :around #'ido-vertical--set-first-match-adv-temp)
+  (advice-add 'ido-delete-file-at-head :around #'ido-vertical--set-first-match-adv-temp)
+
+  (add-hook 'ido-setup-hook 'ido-vertical--reset-offset))
 
 (defun turn-off-ido-vertical ()
   (setq ido-decorations ido-vertical-old-decorations)
   (fset 'ido-completions ido-vertical-old-completions)
 
   (remove-hook 'ido-minibuffer-setup-hook 'ido-vertical-disable-line-truncation)
-  (remove-hook 'ido-setup-hook 'ido-vertical-define-keys))
+  (remove-hook 'ido-setup-hook 'ido-vertical--reset-offset)
+
+  (advice-remove 'ido-exit-minibuffer     #'ido-vertical--set-first-match-adv)
+  (advice-remove 'ido-kill-buffer-at-head #'ido-vertical--set-first-match-adv-temp)
+  (advice-remove 'ido-delete-file-at-head #'ido-vertical--set-first-match-adv-temp))
 
 (defun ido-vertical-next-match ()
   "Call the correct next-match function for right key.
