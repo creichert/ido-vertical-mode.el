@@ -11,6 +11,8 @@ You may also be interested in
 [`ido-ubiquitous`](https://github.com/DarwinAwardWinner/ido-ubiquitous)
 and [`smex`](https://github.com/nonsequitur/smex).
 
+Additionally, if you are interested in ido-mode displaying a grid of options instead of a vertical or horizontal list you can check [`ido-grid-mode`](https://github.com/larkery/ido-grid-mode.el).
+
 ## Install via [MELPA Stable](http://stable.melpa.org/#/) or [marmalade](http://marmalade-repo.org)
 
 `M-x` `package-install` `ido-vertical-mode`
