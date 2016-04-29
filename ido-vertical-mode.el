@@ -42,20 +42,25 @@
 ;; Remember if current directory is 'huge' (so we don't want to do completion).
 (defvar ido-directory-too-big)
 
+(defcustom ido-vertical-indicator "->"
+  "Indicator displayed next to the candidate that will be selected."
+  :type 'string
+  :group 'ido-vertical-mode)
+
 (defvar ido-vertical-decorations
-  '("\n-> "                             ; left bracket around prospect list
-    ""                                  ; right bracket around prospect list
-    "\n   "                             ; separator between prospects, depends on `ido-separator`
-    "\n   ..."                          ; inserted at the end of a truncated list of prospects
-    "["                                 ; left bracket around common match string
-    "]"                                 ; right bracket around common match string
+  `(,(format "\n%s " ido-vertical-indicator)  ; left bracket around prospect list
+    ""                                        ; right bracket around prospect list
+    "\n   "                                   ; separator between prospects, depends on `ido-separator`
+    "\n   ..."                                ; inserted at the end of a truncated list of prospects
+    "["                                       ; left bracket around common match string
+    "]"                                       ; right bracket around common match string
     " [No match]"
     " [Matched]"
     " [Not readable]"
     " [Too big]"
     " [Confirm]"
-    "\n-> "                             ; left bracket around the sole remaining completion
-    ""                                  ; right bracket around the sole remaining completion
+    ,(format "\n%s " ido-vertical-indicator)  ; left bracket around the sole remaining completion
+    ""                                        ; right bracket around the sole remaining completion
     )
 
   "Changing the decorations does most of the work for ido-vertical
@@ -186,11 +191,11 @@ so we can restore it when turning `ido-vertical-mode' off")
         (put-text-property 0 1 'face 'ido-indicator ind))
 
     (when ido-vertical-show-count
-      (setcar ido-vertical-decorations (format " [%d]\n-> " lencomps))
+      (setcar ido-vertical-decorations (format " [%d]\n%s " lencomps ido-vertical-indicator))
       (setq ido-vertical-count-active t))
     (when (and (not ido-vertical-show-count)
                ido-vertical-count-active)
-      (setcar ido-vertical-decorations "\n-> ")
+      (setcar ido-vertical-decorations (format "\n%s "ido-vertical-indicator))
       (setq ido-vertical-count-active nil))
 
     (if (and ido-use-faces comps)
