@@ -28,6 +28,7 @@
 ;;; Code:
 
 (require 'ido)
+(require 'cl-lib)
 
 ;;; The following three variables and their comments are lifted
 ;;; directly from `ido.el'; they are defined here to avoid compile-log
