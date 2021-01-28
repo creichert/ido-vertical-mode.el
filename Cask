@@ -1,5 +1,4 @@
 (source melpa)
-(source marmalade)
 
 (package-file "ido-vertical-mode.el")
 
