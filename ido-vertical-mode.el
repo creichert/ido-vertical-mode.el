@@ -44,31 +44,45 @@
 ;; Remember if current directory is 'huge' (so we don't want to do completion).
 (defvar ido-directory-too-big)
 
-(defcustom ido-vertical-indicator "->"
-  "Indicator displayed next to the candidate that will be selected."
-  :type 'string
-  :group 'ido-vertical-mode)
-
-(defvar ido-vertical-decorations
-  `(,(format "\n%s " ido-vertical-indicator)  ; left bracket around prospect list
-    ""                                        ; right bracket around prospect list
-    "\n   "                                   ; separator between prospects, depends on `ido-separator`
-    "\n   ..."                                ; inserted at the end of a truncated list of prospects
-    "["                                       ; left bracket around common match string
-    "]"                                       ; right bracket around common match string
-    " [No match]"
-    " [Matched]"
-    " [Not readable]"
-    " [Too big]"
-    " [Confirm]"
-    ,(format "\n%s " ido-vertical-indicator)  ; left bracket around the sole remaining completion
-    ""                                        ; right bracket around the sole remaining completion
-    )
-
+(defvar ido-vertical-decorations nil
   "Changing the decorations does most of the work for ido-vertical
 
 This sets up newlines and arrows before, between, and after the
 prospects. For additional information, see `ido-decorations'.")
+
+(defcustom ido-vertical-padding " "
+  "How many spaces to pad the completion candidates.
+
+When setting this variable in ELISP, you must also make sure
+`ido-vertical-decorations' is updated. In addition, if
+`ido-vertical-mode' is on, it must be set to the new value of
+`ido-vertical-decorations' for this variable to take effect in
+the next ido completion event."
+  :type 'string
+  :group 'ido-vertical
+  :initialize 'custom-initialize-default
+  :set (lambda (symbol value)
+         (set-default symbol value)
+         (setq ido-vertical-decorations (ido-vertical-make-decorations :padding value))
+         (when (bound-and-true-p ido-vertical-mode)
+           (setq ido-decorations ido-vertical-decorations))))
+
+(defcustom ido-vertical-indicator "->"
+  "Indicator displayed next to the candidate that will be selected.
+
+When setting this variable in ELISP, you must also make sure
+`ido-vertical-decorations' is updated. In addition, if
+`ido-vertical-mode' is on, it must be set to the new value of
+`ido-vertical-decorations' for this variable to take effect in
+the next ido completion event."
+  :type 'string
+  :group 'ido-vertical
+  :initialize 'custom-initialize-default
+  :set (lambda (symbol value)
+         (set-default symbol value)
+         (setq ido-vertical-decorations (ido-vertical-make-decorations :indicator value))
+         (when (bound-and-true-p ido-vertical-mode)
+           (setq ido-decorations ido-vertical-decorations))))
 
 (defvar ido-vertical-old-decorations nil
   "The original `ido-decorations' variable
@@ -127,6 +141,25 @@ so we can restore it when turning `ido-vertical-mode' off")
   '((t (:inherit font-lock-variable-name-face :bold t :underline t)))
   "Face used by Ido Vertical for the matched part."
   :group 'ido-vertical)
+
+(cl-defun ido-vertical-make-decorations (&key (padding ido-vertical-padding)
+                                              (indicator ido-vertical-indicator))
+  "Construct a new `ido-decorations' format."
+  (list
+   (concat "\n" indicator padding)                                           ; left bracket around prospect list
+   ""                                                                        ; right bracket around prospect list
+   (concat (format (format "\n%%-%ds" (length indicator)) "") padding)       ; separator between prospects, depends on `ido-separator`
+   (concat (format (format "\n%%-%ds" (length indicator)) "") padding "...") ; inserted at the end of a truncated list of prospects
+   "["                                                                       ; left bracket around common match string
+   "]"                                                                       ; right bracket around common match string
+   " [No match]"
+   " [Matched]"
+   " [Not readable]"
+   " [Too big]"
+   " [Confirm]"
+   (concat "\n" indicator padding)                                           ; left bracket around the sole remaining completion
+   ""                                                                        ; right bracket around the sole remaining completion
+   ))
 
 (defun ido-vertical-or-horizontal-completions (name)
   (if (and ido-vertical-disable-if-short
@@ -192,11 +225,12 @@ so we can restore it when turning `ido-vertical-mode' off")
         (put-text-property 0 1 'face 'ido-indicator ind))
 
     (when ido-vertical-show-count
-      (setcar ido-vertical-decorations (format " [%d]\n%s " lencomps ido-vertical-indicator))
+      (setcar ido-vertical-decorations (concat (format " [%d]\n%s" lencomps ido-vertical-indicator)
+                                               ido-vertical-padding))
       (setq ido-vertical-count-active t))
     (when (and (not ido-vertical-show-count)
                ido-vertical-count-active)
-      (setcar ido-vertical-decorations (format "\n%s "ido-vertical-indicator))
+      (setcar ido-vertical-decorations (concat "\n" ido-vertical-indicator ido-vertical-padding))
       (setq ido-vertical-count-active nil))
 
     (if (and ido-use-faces comps)
@@ -293,7 +327,7 @@ so we can restore it when turning `ido-vertical-mode' off")
         (setq ido-vertical-old-decorations ido-decorations)
         (setq ido-vertical-old-completions (symbol-function 'ido-completions))))
 
-  (setq ido-decorations ido-vertical-decorations)
+  (setq ido-vertical-decorations (ido-vertical-make-decorations) ido-decorations ido-vertical-decorations)
   (fset 'ido-completions 'ido-vertical-or-horizontal-completions)
 
   (add-hook 'ido-minibuffer-setup-hook 'ido-vertical-disable-line-truncation)
