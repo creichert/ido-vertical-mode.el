@@ -1,4 +1,5 @@
 language: emacs-lisp
+
 matrix:
   include:
     - os: linux
@@ -28,6 +29,9 @@ matrix:
     - os: linux
       dist: xenial
       env: EVM_EMACS=emacs-27.1-travis-linux-xenial
+    - os: linux
+      dist: xenial
+      env: EVM_EMACS=emacs-28.2-travis-linux-xenial
     - os: linux
       dist: xenial
       env: EVM_EMACS=emacs-git-snapshot-travis-linux-xenial
